@@ -36,7 +36,7 @@ export function Layout({ fileTree, editor, terminal, preview }: LayoutProps) {
               {typeof editor === 'function' ? editor() : editor}
             </ResizablePanel>
             <ResizableHandle />
-            <ResizablePanel defaultSize={25} minSize={10} maxSize={25}>
+            <ResizablePanel defaultSize={25} minSize={10}>
               {/* <div className='flex h-full items-center justify-center p-6'>
                 <span className='font-semibold'>terminal</span>
               </div> */}

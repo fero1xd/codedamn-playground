@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -36,7 +38,7 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: #04090f;
     --foreground: 210 40% 98%;
 
     --card: 222.2 84% 4.9%;
