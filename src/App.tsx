@@ -1,7 +1,10 @@
-import { useDarkMode } from './hooks/use-dark-mode';
+import { useDarkMode } from '@/hooks/use-dark-mode';
+import { Layout } from '@/layout';
 
 export function App() {
   useDarkMode();
 
-  return <div></div>;
+  return (
+    <Layout editor={<></>} fileTree={<></>} terminal={<></>} preview={<></>} />
+  );
 }
