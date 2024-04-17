@@ -3,6 +3,7 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.556.0",
     "@hono/node-server": "^1.10.0",
     "hono": "^4.2.3"
   },
