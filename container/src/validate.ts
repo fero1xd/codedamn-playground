@@ -11,7 +11,7 @@ export const incomingMessage = z.discriminatedUnion('event', [
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.FILE_CONTENT),
-    filename: z.string(),
+    filePath: z.string(),
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.SAVE_CHANGES),

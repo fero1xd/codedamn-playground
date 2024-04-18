@@ -2,7 +2,7 @@ import { WebSocketServer } from 'ws';
 import { parseJSON } from './utils';
 import { parseMessage, sendResponse } from './ws';
 import { IncomingMessage } from './types';
-import { generateFileTree } from './fs';
+import { generateFileTree, getFileContent } from './fs';
 
 const main = () => {
   const wss = new WebSocketServer({
@@ -30,6 +30,16 @@ const main = () => {
             {
               nonce: message.nonce,
               data: await generateFileTree(),
+            },
+            ws
+          );
+          break;
+
+        case IncomingMessage.FILE_CONTENT:
+          sendResponse(
+            {
+              nonce: message.nonce,
+              data: await getFileContent(message.filePath),
             },
             ws
           );

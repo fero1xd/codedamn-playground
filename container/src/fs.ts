@@ -1,6 +1,5 @@
 import fs from 'fs/promises';
 import path from 'path';
-import util from 'util';
 import { Child, Root } from './types';
 
 export const generateFileTree = async () => {
@@ -15,12 +14,24 @@ export const generateFileTree = async () => {
     const contents = await fs.readdir(dirName, { withFileTypes: true });
 
     for (const c of contents) {
+      const p = path.join(c.path, c.name);
+
       if (c.isFile()) {
-        node.children.push({ name: c.name, isDir: false, children: [] });
+        node.children.push({
+          name: c.name,
+          isDir: false,
+          children: [],
+          path: p,
+        });
         continue;
       }
 
-      const t: Child = { name: c.name, isDir: true, children: [] };
+      const t: Child = {
+        name: c.name,
+        isDir: true,
+        children: [],
+        path: p,
+      };
       await traverseFs(path.resolve(dirName, c.name), t);
       node.children.push(t);
     }
@@ -28,7 +39,27 @@ export const generateFileTree = async () => {
 
   await traverseFs(workDir, root);
 
-  console.log(util.inspect(root, { depth: null, colors: true }));
-
   return root;
+};
+
+const lruCache: Map<string, string> = new Map();
+
+export const getFileContent = async (filePath: string) => {
+  if (lruCache.has(filePath)) {
+    const contents = lruCache.get(filePath)!;
+
+    lruCache.delete(filePath);
+    lruCache.set(filePath, contents);
+
+    return contents;
+  }
+
+  if (lruCache.size > 10) {
+    lruCache.delete(lruCache.keys().next().value);
+  }
+
+  const c = await fs.readFile(filePath, { encoding: 'utf-8' });
+  lruCache.set(filePath, c);
+
+  return c;
 };
