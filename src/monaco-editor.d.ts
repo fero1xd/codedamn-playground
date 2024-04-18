@@ -7682,7 +7682,7 @@ declare module 'monaco-editor' {
     }
 
     export interface InlineCompletions<
-      TItem extends InlineCompletion = InlineCompletion
+      TItem extends InlineCompletion = InlineCompletion,
     > {
       readonly items: readonly TItem[];
       /**
@@ -7699,7 +7699,7 @@ declare module 'monaco-editor' {
     export type InlineCompletionProviderGroupId = string;
 
     export interface InlineCompletionsProvider<
-      T extends InlineCompletions = InlineCompletions
+      T extends InlineCompletions = InlineCompletions,
     > {
       provideInlineCompletions(
         model: editor.ITextModel,
@@ -8675,13 +8675,13 @@ declare module 'monaco-editor' {
      */
     export type IShortMonarchLanguageRule1 = [
       string | RegExp,
-      IMonarchLanguageAction
+      IMonarchLanguageAction,
     ];
 
     export type IShortMonarchLanguageRule2 = [
       string | RegExp,
       IMonarchLanguageAction,
-      string
+      string,
     ];
 
     export interface IExpandedMonarchLanguageRule {

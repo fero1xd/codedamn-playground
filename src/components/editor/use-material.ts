@@ -5,8 +5,13 @@ export function useMaterial() {
   const [themeLoaded, setThemeLoaded] = useState(false);
 
   useEffect(() => {
+    loader.config({
+      paths: {
+        vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.47.0/min/vs',
+      },
+    });
+
     loader.init().then(async (m) => {
-      // Load theme here
       console.log('fetching theme');
       const res = await fetch('/theme.json');
       const json = await res.json();

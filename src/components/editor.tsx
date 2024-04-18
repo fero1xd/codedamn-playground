@@ -2,7 +2,7 @@ import { Monaco, Editor as MonacoEditor } from '@monaco-editor/react';
 import type * as monaco from 'monaco-editor';
 import { useMaterial } from './editor/use-material';
 import * as prettier from 'prettier/standalone';
-import parserBabel from 'prettier/plugins/babel';
+import typescriptPlugin from 'prettier/plugins/typescript';
 import * as prettierPluginEstree from 'prettier/plugins/estree';
 
 export function Editor() {
@@ -31,12 +31,12 @@ export function Editor() {
 
     m.languages.registerDocumentFormattingEditProvider('typescript', {
       async provideDocumentFormattingEdits(model) {
-        console.log(model.getValue());
-
         const text = await prettier.format(model.getValue(), {
-          parser: 'babel-ts',
-          plugins: [parserBabel, prettierPluginEstree],
-          singleQuote: true,
+          plugins: [prettierPluginEstree, typescriptPlugin],
+          parser: 'typescript',
+          useTabs: true,
+          trailingComma: 'all',
+          printWidth: 100,
         });
 
         return [
@@ -47,6 +47,24 @@ export function Editor() {
         ];
       },
     });
+
+    // NOTE: FOR JUMP TO DEF IN MULTI MODEL SETUP
+    // const editorService = e._codeEditorService;
+    // const openEditorBase = editorService.openCodeEditor.bind(editorService);
+    // editorService.openCodeEditor = async (
+    //   input: any,
+    //   source: monaco.editor.ICodeEditor
+    // ) => {
+    //   const result = await openEditorBase(input, source);
+    //   if (result === null) {
+    //     console.log('intercepted');
+    //     console.log('Open definition for:', input);
+    //     console.log('Corresponding model:', m.editor.getModel(input.resource));
+
+    //     source.setModel(m.editor.getModel(input.resource));
+    //   }
+    //   return result; // always return the base result
+    // };
 
     // @ts-expect-error Again, weird type errors
     e.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function () {
@@ -91,8 +109,7 @@ export function Editor() {
   return (
     <MonacoEditor
       height='100%'
-      defaultLanguage='javascript'
-      defaultValue='// some comment'
+      defaultLanguage='typescript'
       options={{
         minimap: {
           enabled: false,
