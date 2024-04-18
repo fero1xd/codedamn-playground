@@ -11,7 +11,7 @@ export function FileTree() {
   return (
     <div className='h-full pt-4 flex flex-col'>
       {data.children.map((item) => {
-        return <Item node={item} />;
+        return <Item node={item} key={item.path} />;
       })}
     </div>
   );

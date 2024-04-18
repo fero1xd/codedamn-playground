@@ -7,9 +7,9 @@ export function Item({ node }: { node: Child }) {
 
   return (
     <>
-      <div className='flex flex-col px-2'>
+      <div className='flex flex-col px-2 gap-1'>
         <div
-          className='flex items-center gap-2 cursor-pointer p-2 text-gray-300 hover:text-gray-500'
+          className='flex items-center gap-2 cursor-pointer p-1 text-gray-300 hover:text-gray-500'
           onClick={() => {
             if (node.isDir) {
               setExpand((e) => !e);
@@ -23,7 +23,7 @@ export function Item({ node }: { node: Child }) {
         {node.isDir &&
           expand &&
           node.children.map((item) => {
-            return <Item node={item} />;
+            return <Item node={item} key={item.path} />;
           })}
       </div>
     </>
