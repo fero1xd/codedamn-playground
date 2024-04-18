@@ -100,6 +100,7 @@ export function Editor() {
         fontSize: 18,
         mouseWheelZoom: true,
         automaticLayout: true,
+        fontFamily: 'Cascadia Code',
       }}
       theme='uitheme'
       onMount={onMount}
