@@ -16,6 +16,7 @@ export function Editor() {
       alwaysstrict: true,
       noemit: true,
       typeRoots: ['node_modules/@types'],
+      esModuleInterop: true,
     };
 
     m.languages.typescript.typescriptDefaults.setCompilerOptions(
@@ -67,6 +68,14 @@ export function Editor() {
       m.Uri.parse('file:///sec.ts')
     );
 
+    const d = await fetch('https://unpkg.com/@types/node@10.11.0/index.d.ts');
+    const t = await d.text();
+
+    m.languages.typescript.typescriptDefaults.addExtraLib(
+      t,
+      'file:///node_modules/@types/node/index.d.ts'
+    );
+
     // @ts-expect-error aaaa
     e.setModel(model);
   };
@@ -89,6 +98,8 @@ export function Editor() {
           enabled: false,
         },
         fontSize: 18,
+        mouseWheelZoom: true,
+        automaticLayout: true,
       }}
       theme='uitheme'
       onMount={onMount}
