@@ -18,7 +18,7 @@ export function useWSQuery<K extends QueryKeys>(key: K) {
       /* eslint-disable-next-line */
       return (await queries[key](connection)) as any;
     },
-
-    enabled: connection !== null,
+    enabled: !!connection,
+    refetchOnWindowFocus: false,
   });
 }

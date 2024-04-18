@@ -1,3 +1,6 @@
+import { Conn } from '@/providers/ws';
+import { v4 } from 'uuid';
+
 export type Child = {
   name: string;
   isDir: boolean;
@@ -6,18 +9,23 @@ export type Child = {
 };
 export type Root = Pick<Child, 'children'>;
 
-const requestFileTree = async (conn: WebSocket) => {
-  const nonce = 'sample_nonce';
+const requestFileTree = (conn: Conn) => {
+  const nonce = v4();
+  const { ws, addListener } = conn;
 
-  conn.send(
+  ws.send(
     JSON.stringify({
       nonce,
       event: 'FILE_TREE',
     })
   );
 
-  console.log('resolved');
-  return { children: [] } as Root;
+  return new Promise<Root>((res) => {
+    addListener(nonce, (data) => {
+      console.log('resolved');
+      res(data as Root);
+    });
+  });
 };
 
 export const queries = {

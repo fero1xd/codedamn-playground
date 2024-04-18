@@ -17,7 +17,7 @@ export const generateFileTree = async () => {
       const p = path.join(c.path, c.name);
 
       if (c.isFile()) {
-        node.children.push({
+        node.children.unshift({
           name: c.name,
           isDir: false,
           children: [],
@@ -33,7 +33,7 @@ export const generateFileTree = async () => {
         path: p,
       };
       await traverseFs(path.resolve(dirName, c.name), t);
-      node.children.push(t);
+      node.children.unshift(t);
     }
   };
 
