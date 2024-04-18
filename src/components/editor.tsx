@@ -9,7 +9,6 @@ export function Editor() {
       fetch('/theme.json')
         .then((d) => d.json())
         .then((theme) => {
-          console.log(theme);
           m.editor.defineTheme('uitheme', theme);
           setThemeLoaded(true);
         });
@@ -21,7 +20,7 @@ export function Editor() {
   return (
     <MonacoEditor
       height='100%'
-      defaultLanguage='javascript'
+      defaultLanguage='typescript'
       defaultValue='// some comment'
       options={{
         minimap: {

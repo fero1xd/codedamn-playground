@@ -7,7 +7,6 @@ import { useEffect } from 'react';
 export function useDarkMode() {
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark');
-    console.log(isDarkMode);
 
     if (isDarkMode) return;
 

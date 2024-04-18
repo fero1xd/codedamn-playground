@@ -1,7 +1,7 @@
 import { useDarkMode } from '@/hooks/use-dark-mode';
-import { TerminalX as Terminal } from './components/terminal';
 import { Layout } from './layout';
 import { Editor } from './components/editor';
+import { FileTree } from './components/file-tree';
 
 export function App() {
   useDarkMode();
@@ -9,15 +9,15 @@ export function App() {
   return (
     <Layout
       editor={<Editor />}
-      fileTree={<></>}
-      terminal={<Terminal />}
+      fileTree={<FileTree />}
+      terminal={<></>}
       preview={
         <>
-          <iframe
+          {/* <iframe
             id='twitch-chat-embed'
-            src={`https://www.twitch.tv/embed/ninja/chat?parent=${window.location.hostname}&darkpopout`}
+            src={`https://www.twitch.tv/embed/shanks_ttv/chat?parent=${window.location.hostname}&darkpopout`}
             className='h-full w-full'
-          ></iframe>
+          ></iframe> */}
         </>
       }
     />
