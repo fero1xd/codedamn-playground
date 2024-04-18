@@ -1,6 +1,8 @@
 import { WebSocketServer } from 'ws';
 import { parseJSON } from './utils';
-import { parseMessage } from './ws';
+import { parseMessage, sendResponse } from './ws';
+import { IncomingMessage } from './types';
+import { generateFileTree } from './fs';
 
 const main = () => {
   const wss = new WebSocketServer({
@@ -9,7 +11,7 @@ const main = () => {
 
   // TODO: Add authentication
   wss.on('connection', (ws) => {
-    ws.on('message', function (data, isBinary) {
+    ws.on('message', async (data, isBinary) => {
       if (isBinary) return;
 
       const raw = data.toString();
@@ -21,6 +23,17 @@ const main = () => {
       }
 
       console.log(message);
+
+      switch (message?.event) {
+        case IncomingMessage.FILE_TREE:
+          sendResponse(
+            {
+              nonce: message.nonce,
+              data: await generateFileTree(),
+            },
+            ws
+          );
+      }
     });
   });
 

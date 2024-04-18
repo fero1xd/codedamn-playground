@@ -1,6 +1,8 @@
+import WebSocket from 'ws';
+import { ResponseType } from './types';
 import { incomingMessage } from './validate';
 
-export function parseMessage(json: Record<string, unknown>) {
+export const parseMessage = (json: Record<string, unknown>) => {
   try {
     const data = incomingMessage.parse(json);
 
@@ -10,4 +12,8 @@ export function parseMessage(json: Record<string, unknown>) {
       success: false,
     };
   }
-}
+};
+
+export const sendResponse = (data: ResponseType, ws: WebSocket) => {
+  ws.send(JSON.stringify(data));
+};
