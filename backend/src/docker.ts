@@ -1,4 +1,4 @@
-import Dockerode from 'dockerode';
+import Dockerode, { Container } from 'dockerode';
 
 const docker = new Dockerode({ socketPath: '/var/run/docker.sock' });
 

@@ -1,12 +1,22 @@
 {
   "name": "container",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "module": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "dev": "tsc -w",
+    "start": "tsc && node dist/index.js",
+    "start:dev": "tsx watch src/index.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "devDependencies": {
+    "@types/ws": "^8.5.10",
+    "bun-types": "latest",
+    "tsx": "^4.7.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "ws": "^8.16.0",
+    "zod": "^3.22.4"
+  }
 }
