@@ -1,11 +1,17 @@
 {
   "scripts": {
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "db:generate": "bun drizzle-kit generate:pg",
+    "db:migrate": "tsx ./src/db/migration.ts",
+    "db:studio": "bun drizzle-kit studio"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.556.0",
     "@hono/node-server": "^1.10.0",
+    "@neondatabase/serverless": "^0.9.1",
     "dockerode": "^4.0.2",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.30.8",
     "hono": "^4.2.3",
     "ws": "^8.16.0"
   },
@@ -13,6 +19,8 @@
     "@types/dockerode": "^3.3.28",
     "@types/node": "^20.11.17",
     "@types/ws": "^8.5.10",
+    "drizzle-kit": "^0.20.14",
+    "pg": "^8.11.5",
     "tsx": "^4.7.1"
   }
 }

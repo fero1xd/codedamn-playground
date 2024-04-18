@@ -39,18 +39,31 @@ export const seedTemplates = async () => {
       continue;
     }
 
-    // NOTE: Assuming theres no more dirs inside a template
-    const files = await fs.readdir(path.join('templates', template));
+    const s3Path = path.join('templates', template);
 
-    for (const file of files) {
-      const command = new PutObjectCommand({
-        Bucket: env.BUCKET,
-        Key: `${template}/${file}`,
-        Body: createReadStream(path.resolve('templates', template, file)),
-      });
+    const uploadFilesRecursive = async (dirName: string) => {
+      const contents = await fs.readdir(dirName);
 
-      await client.send(command);
-    }
+      for (const c of contents) {
+        const p = path.join(dirName, c);
+
+        const stat = await fs.stat(p);
+
+        if (stat.isDirectory()) {
+          uploadFilesRecursive(p);
+        } else {
+          const command = new PutObjectCommand({
+            Bucket: env.BUCKET,
+            Key: `${p.substring(s3Path.length + 1)}`,
+            Body: createReadStream(path.resolve(dirName, c)),
+          });
+
+          await client.send(command);
+        }
+      }
+    };
+
+    uploadFilesRecursive(s3Path);
 
     console.log(`[seeder]: ${template} successfuly seeded to s3`);
   }

@@ -1,0 +1,50 @@
+{
+  "id": "2b68c292-13db-45fa-907c-6f366dc5d424",
+  "prevId": "7f461ebf-cf4e-4ccf-a8bc-626c342a95c6",
+  "version": "5",
+  "dialect": "pg",
+  "tables": {
+    "playgrounds": {
+      "name": "playgrounds",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "template": {
+          "name": "template",
+          "type": "template",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(256)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {
+    "template": {
+      "name": "template",
+      "values": {
+        "nodejs": "nodejs"
+      }
+    }
+  },
+  "schemas": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

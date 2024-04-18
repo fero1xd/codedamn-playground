@@ -1,4 +1,10 @@
-const REQUIRED_ENV = ['BUCKET', 'REGION', 'ACCESS_KEY', 'SECRET_KEY'] as const;
+const REQUIRED_ENV = [
+  'BUCKET',
+  'REGION',
+  'ACCESS_KEY',
+  'SECRET_KEY',
+  'DATABASE_URL',
+] as const;
 
 type Env = { [X in (typeof REQUIRED_ENV)[number]]: string };
 
