@@ -1,1 +1,0 @@
-ALTER TABLE "playgrounds" ADD COLUMN "name" varchar(256);

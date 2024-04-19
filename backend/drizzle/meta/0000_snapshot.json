@@ -1,5 +1,5 @@
 {
-  "id": "7f461ebf-cf4e-4ccf-a8bc-626c342a95c6",
+  "id": "8655d436-c1b9-474e-8507-348979dff537",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "5",
   "dialect": "pg",
@@ -10,15 +10,22 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "template": {
           "name": "template",
           "type": "template",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(256)",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -31,7 +38,7 @@
     "template": {
       "name": "template",
       "values": {
-        "nodejs": "nodejs"
+        "typescript": "typescript"
       }
     }
   },
