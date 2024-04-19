@@ -1,9 +1,10 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { createWSS } from './wss';
+import { seedTemplates } from './aws';
 
 const main = async () => {
-  // await seedTemplates();
+  await seedTemplates();
   const app = new Hono();
 
   app.get('/', (c) => {

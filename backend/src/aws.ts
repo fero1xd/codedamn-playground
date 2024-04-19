@@ -28,10 +28,13 @@ const templateExists = async (name: string) => {
 
 export const seedTemplates = async () => {
   console.log('[seeder]: Starting');
-  const templates = await fs.readdir(path.join('templates'));
+
+  const templatesDir = 'templates';
+  const templates = await fs.readdir(templatesDir);
 
   for (const template of templates) {
     const exists = await templateExists(template);
+    const s3Path = path.join('templates', template);
 
     if (exists) {
       console.log(`[seeder]: ${template} already exists in s3`);
@@ -39,23 +42,19 @@ export const seedTemplates = async () => {
       continue;
     }
 
-    const s3Path = path.join('templates', template);
-
     const uploadFilesRecursive = async (dirName: string) => {
-      const contents = await fs.readdir(dirName);
+      const contents = await fs.readdir(dirName, { withFileTypes: true });
 
       for (const c of contents) {
-        const p = path.join(dirName, c);
+        const p = path.join(dirName, c.name);
 
-        const stat = await fs.stat(p);
-
-        if (stat.isDirectory()) {
+        if (c.isDirectory()) {
           uploadFilesRecursive(p);
         } else {
           const command = new PutObjectCommand({
             Bucket: env.BUCKET,
-            Key: `${p.substring(s3Path.length + 1)}`,
-            Body: createReadStream(path.resolve(dirName, c)),
+            Key: `${p.substring(templatesDir.length + 1)}`,
+            Body: createReadStream(path.resolve(dirName, c.name)),
           });
 
           await client.send(command);
