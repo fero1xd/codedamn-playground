@@ -2,6 +2,10 @@ FROM oven/bun:1.1.4 as base
 
 WORKDIR /root/driver
 
+# Install esential packages
+RUN apt update -y
+RUN apt install vim -y
+
 # install dependencies into temp directory
 # this will cache them and speed up future builds
 FROM base AS install
@@ -32,8 +36,9 @@ COPY --from=prerelease /root/driver/dist ./dist
 COPY --from=prerelease /root/driver/package.json .
 
 EXPOSE 3000
-CMD ["bun", "dist/index.js"] 
 
+
+CMD ["bun", "dist/index.js"] 
 
 # CMD [ "bun", "dist/index.js" ]
 

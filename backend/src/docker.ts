@@ -37,7 +37,7 @@ export const createPlayground = async (w: WebSocket) => {
   // );
 
   const container = await docker.getContainer(
-    'cb782bed26b3617aca31dbf67bd90f43ebfa52078b568aaa53c586c01903ae52'
+    'a0034e23daa180c89fe3c4af2f4af30a59b4f2807d0a4b63c789d2b771fde7de'
   );
 
   const inspect = await container.inspect();
@@ -51,6 +51,9 @@ export const createPlayground = async (w: WebSocket) => {
     AttachStdout: true,
     AttachStderr: true,
     Tty: true,
+    User: 'bun',
+    WorkingDir: '/home/bun',
+    Env: ['TERM=xterm-256color'],
   });
 
   await exec.start(

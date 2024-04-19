@@ -4,7 +4,7 @@ import { Terminal } from '@xterm/xterm';
 import { useEffect, useRef } from 'react';
 import '@/styles/xterm.css';
 
-export function TerminalX() {
+export function TerminalX({ fit: fitAddon }: { fit: FitAddon }) {
   const termRef = useRef<HTMLDivElement | null>(null);
   const socket = useRef<WebSocket>();
 
@@ -26,12 +26,12 @@ export function TerminalX() {
       cursorStyle: 'bar',
     });
 
-    const fitAddon = new FitAddon();
     const attachAddon = new AttachAddon(ws);
 
     terminal.loadAddon(fitAddon);
 
     ws.onopen = () => {
+      console.log('terminal session opened');
       terminal.loadAddon(attachAddon);
 
       termRef.current && terminal.open(termRef.current);
@@ -41,7 +41,7 @@ export function TerminalX() {
     ws.onclose = () => {
       console.log('terminal session closed from backend');
     };
-  }, [termRef, socket]);
+  }, [termRef, socket, fitAddon]);
 
   return (
     <div style={{ height: '100%' }} className='text-left' ref={termRef}></div>

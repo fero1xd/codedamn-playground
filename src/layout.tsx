@@ -9,14 +9,23 @@ type LayoutProps = {
   [X in 'fileTree' | 'editor' | 'terminal' | 'preview']:
     | React.ReactNode
     | (() => React.ReactNode);
+} & {
+  onLayout: () => void;
 };
 
-export function Layout({ fileTree, editor, terminal, preview }: LayoutProps) {
+export function Layout({
+  fileTree,
+  editor,
+  terminal,
+  preview,
+  onLayout,
+}: LayoutProps) {
   return (
     <>
       <ResizablePanelGroup
         direction='horizontal'
         className='max-w-screen min-h-screen rounded-lg border'
+        onLayout={onLayout}
       >
         <ResizablePanel defaultSize={20} maxSize={20} minSize={10}>
           {/* <div className='flex h-full items-center justify-center p-6'> */}
@@ -28,7 +37,7 @@ export function Layout({ fileTree, editor, terminal, preview }: LayoutProps) {
         <ResizableHandle />
 
         <ResizablePanel defaultSize={55}>
-          <ResizablePanelGroup direction='vertical'>
+          <ResizablePanelGroup direction='vertical' onLayout={onLayout}>
             <ResizablePanel defaultSize={75}>
               {/* <div className='flex h-full items-center justify-center p-6'>
                 <span className='font-semibold'>Code</span>
@@ -37,7 +46,7 @@ export function Layout({ fileTree, editor, terminal, preview }: LayoutProps) {
             </ResizablePanel>
             <ResizableHandle />
             <ResizablePanel defaultSize={25} minSize={10}>
-              {/* <div className='flex h-full items-center justify-center p-6'>
+              {/* <div className='flex h-full -center justify-center p-6'>
                 <span className='font-semibold'>terminal</span>
               </div> */}
               {typeof terminal === 'function' ? terminal() : terminal}

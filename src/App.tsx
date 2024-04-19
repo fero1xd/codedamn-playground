@@ -2,15 +2,19 @@ import { useDarkMode } from '@/hooks/use-dark-mode';
 import { Layout } from './layout';
 import { Editor } from './components/editor';
 import { TerminalX } from './components/terminal';
+import { useState } from 'react';
+import { FitAddon } from '@xterm/addon-fit';
 
 export function App() {
   useDarkMode();
+
+  const [fitAddon] = useState(() => new FitAddon());
 
   return (
     <Layout
       editor={<Editor />}
       fileTree={<></>}
-      terminal={<TerminalX />}
+      terminal={<TerminalX fit={fitAddon} />}
       preview={
         <>
           {/* <iframe
@@ -20,6 +24,10 @@ export function App() {
           ></iframe> */}
         </>
       }
+      onLayout={() => {
+        console.log('layout change');
+        fitAddon.fit();
+      }}
     />
   );
 }
