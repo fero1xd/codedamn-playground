@@ -1,29 +1,27 @@
-import { serve } from '@hono/node-server';
-import { Hono } from 'hono';
 import { createWSS } from './wss';
-import { seedTemplates } from './aws';
 
 const main = async () => {
-  await seedTemplates();
-  const app = new Hono();
-
-  app.get('/', (c) => {
-    return c.text('Hello Hono!');
-  });
-
-  app.post('/boot-up', (c) => {
-    return c.text('Done');
-  });
-
-  const port = 3000;
-  console.log(`Server is running on port ${port}`);
-
+  // await seedTemplatesa();
   createWSS();
+  // const app = new Hono();
 
-  serve({
-    fetch: app.fetch,
-    port,
-  });
+  // app.get('/', (c) => {
+  //   return c.text('Hello Hono!');
+  // });
+
+  // app.post('/boot-up', (c) => {
+  //   return c.text('Done');
+  // });
+
+  // const port = 3000;
+  // console.log(`Server is running on port ${port}`);
+
+  // createWSS();
+
+  // serve({
+  //   fetch: app.fetch,
+  //   port,
+  // });
 };
 
 main();

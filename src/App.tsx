@@ -1,7 +1,7 @@
 import { useDarkMode } from '@/hooks/use-dark-mode';
 import { Layout } from './layout';
 import { Editor } from './components/editor';
-import { FileTree } from './components/file-tree';
+import { TerminalX } from './components/terminal';
 
 export function App() {
   useDarkMode();
@@ -9,8 +9,8 @@ export function App() {
   return (
     <Layout
       editor={<Editor />}
-      fileTree={<FileTree />}
-      terminal={<></>}
+      fileTree={<></>}
+      terminal={<TerminalX />}
       preview={
         <>
           {/* <iframe

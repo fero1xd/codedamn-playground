@@ -37,6 +37,10 @@ export function TerminalX() {
       termRef.current && terminal.open(termRef.current);
       fitAddon.fit();
     };
+
+    ws.onclose = () => {
+      console.log('terminal session closed from backend');
+    };
   }, [termRef, socket]);
 
   return (

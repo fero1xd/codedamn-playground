@@ -1,8 +1,10 @@
-import Dockerode, { Container } from 'dockerode';
+import Dockerode from 'dockerode';
+import { PassThrough } from 'stream';
+import { WebSocket } from 'ws';
 
 const docker = new Dockerode({ socketPath: '/var/run/docker.sock' });
 
-export const createPlayground = async () => {
+export const createPlayground = async (w: WebSocket) => {
   // TODO: do this later
   // if (!container) {
   //   const c = await docker.getContainer(
@@ -33,4 +35,60 @@ export const createPlayground = async () => {
   //     }, 1000);
   //   }
   // );
+
+  const container = await docker.getContainer(
+    'cb782bed26b3617aca31dbf67bd90f43ebfa52078b568aaa53c586c01903ae52'
+  );
+
+  const inspect = await container.inspect();
+
+  console.log('available exec sessions');
+  console.log(inspect.ExecIDs);
+
+  const exec = await container.exec({
+    Cmd: ['bash'],
+    AttachStdin: true,
+    AttachStdout: true,
+    AttachStderr: true,
+    Tty: true,
+  });
+
+  await exec.start(
+    {
+      stdin: true,
+      hijack: true,
+    },
+    function (err, stream) {
+      if (err) throw err;
+      if (!stream) {
+        return console.log('???');
+      }
+
+      console.log('**creating exec session**');
+
+      w.onmessage = (e) => {
+        stream.write(e.data.toString());
+      };
+
+      const fromContainerStdout = new PassThrough();
+      const fromContainerStderr = new PassThrough();
+
+      docker.modem.demuxStream(
+        stream,
+        fromContainerStdout,
+        fromContainerStderr
+      );
+
+      fromContainerStdout.on('data', (d: Buffer) => {
+        w.send(d);
+      });
+      fromContainerStderr.on('data', (d: Buffer) => {
+        w.send(d);
+      });
+
+      stream.on('end', () => {
+        console.log('**Session ended**');
+      });
+    }
+  );
 };

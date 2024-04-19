@@ -7,6 +7,7 @@ import { generateFileTree, getFileContent } from './fs';
 const main = () => {
   const wss = new WebSocketServer({
     port: 3000,
+    host: '0.0.0.0',
   });
 
   // TODO: Add authentication
@@ -50,6 +51,8 @@ const main = () => {
   wss.on('listening', () => {
     console.log('Container listening on port 3000');
   });
+
+  console.log('here');
 };
 
 main();
