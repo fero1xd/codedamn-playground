@@ -4,10 +4,12 @@ import { Editor } from './components/editor';
 import { TerminalX } from './components/terminal';
 import { useState } from 'react';
 import { FitAddon } from '@xterm/addon-fit';
+import { Browser } from './components/browser';
 
 export function App() {
   useDarkMode();
 
+  // TODO: Refactor this
   const [fitAddon] = useState(() => new FitAddon());
 
   return (
@@ -15,15 +17,7 @@ export function App() {
       editor={<Editor />}
       fileTree={<></>}
       terminal={<TerminalX fit={fitAddon} />}
-      preview={
-        <>
-          {/* <iframe
-            id='twitch-chat-embed'
-            src={`https://www.twitch.tv/embed/shanks_ttv/chat?parent=${window.location.hostname}&darkpopout`}
-            className='h-full w-full'
-          ></iframe> */}
-        </>
-      }
+      preview={<Browser />}
       onLayout={() => {
         console.log('layout change');
         fitAddon.fit();

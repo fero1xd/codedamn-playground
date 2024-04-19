@@ -35,7 +35,6 @@ COPY --from=prerelease /root/driver/src ./src
 COPY --from=prerelease /root/driver/dist ./dist
 COPY --from=prerelease /root/driver/package.json .
 
-EXPOSE 3000
 
 
 CMD ["bun", "dist/index.js"] 
