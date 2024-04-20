@@ -26,7 +26,7 @@ export function Browser() {
         className='h-full w-full p-3'
         src='http://sample.localhost'
         ref={ref}
-        onLoad={(_) => {
+        onLoad={() => {
           console.log('loaded iframe');
         }}
       ></iframe>

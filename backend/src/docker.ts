@@ -86,6 +86,48 @@ export const attachPlayground = async () => {
   // );
 };
 
+export type ContainerStatus =
+  | 'restarting'
+  | 'exited'
+  | 'created'
+  | 'removing'
+  | 'paused'
+  | 'exited'
+  | 'running'
+  | 'dead';
+
+export const checkPlaygroundStatus = async (
+  id: string,
+  status: ContainerStatus | ContainerStatus[]
+) => {
+  try {
+    const containers = await docker.listContainers({
+      filters: {
+        status: typeof status === 'string' ? [status] : status,
+        label: [`playgroundId=${id}`],
+      },
+    });
+
+    if (!containers.length) {
+      return false;
+    }
+
+    if (containers.length > 1) {
+      // TODO: handle it
+      return false;
+    }
+
+    const c = containers[0];
+    if (typeof status === 'string') {
+      return c.State === status;
+    }
+
+    return status.includes(c.State as ContainerStatus);
+  } catch (e) {
+    console.log('error while getting container status');
+  }
+};
+
 export const createPlaygroundContainer = async (id: string) => {
   try {
     console.log(`Creating playground container with id: ${id}`);
@@ -106,6 +148,7 @@ export const createPlaygroundContainer = async (id: string) => {
       Labels: {
         playgroundId: id,
       },
+      Env: [`VIRTUAL_HOST=${id}.localhost`],
     });
 
     console.log(`Created playground container with id: ${id}`);

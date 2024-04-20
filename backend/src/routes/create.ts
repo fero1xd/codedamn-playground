@@ -26,7 +26,9 @@ export async function createPlayground(c: Context) {
 
     await copyS3Folder(`templates/${data.template}`, `${id}`);
 
-    await createPlaygroundContainer(id);
+    if ((await createPlaygroundContainer(id)) === false) {
+      return c.json({ message: 'Playground creation failed' }, 500);
+    }
 
     return c.json({ playgroundId: id }, 200);
   } catch (e) {

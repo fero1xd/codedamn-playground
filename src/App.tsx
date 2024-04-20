@@ -16,7 +16,7 @@ export function App() {
     <Layout
       editor={<Editor />}
       fileTree={<></>}
-      terminal={<TerminalX fit={fitAddon} />}
+      terminal={<></>}
       preview={<Browser />}
       onLayout={() => {
         console.log('layout change');
