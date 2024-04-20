@@ -4,6 +4,8 @@ const REQUIRED_ENV = [
   'ACCESS_KEY',
   'SECRET_KEY',
   'DATABASE_URL',
+  'UPSTASH_REDIS_REST_URL',
+  'UPSTASH_REDIS_REST_TOKEN',
 ] as const;
 
 type Env = { [X in (typeof REQUIRED_ENV)[number]]: string };

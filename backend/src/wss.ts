@@ -1,5 +1,5 @@
 import { WebSocketServer } from 'ws';
-import { createPlayground } from './docker';
+import { startPlaygroundBash } from './docker';
 
 export function createWSS() {
   const port = 3001;
@@ -8,10 +8,12 @@ export function createWSS() {
   });
 
   wss.on('connection', (w) => {
-    createPlayground(w);
+    startPlaygroundBash(w);
   });
 
   wss.on('listening', () => {
     console.log('listening wss on port ' + port);
   });
+
+  return wss;
 }
