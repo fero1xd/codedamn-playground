@@ -1,9 +1,14 @@
-import { PropsWithChildren, useEffect, useMemo, useState } from 'react';
+import { PropsWithChildren, useMemo } from 'react';
 import { createContext } from 'react';
+import useWebSocket from 'react-use-websocket';
+import { WebSocketLike } from 'react-use-websocket/dist/lib/types';
+
+type RemoveListenerCb = () => void;
 
 export type Conn = {
-  ws: WebSocket;
-  addListener: (nonce: string, cb: (data: unknown) => void) => void;
+  ws: WebSocketLike | null;
+  addListener: (nonce: string, cb: (data: unknown) => void) => RemoveListenerCb;
+  sendJsonMessage: (json: Record<string, unknown>) => void;
 };
 
 export const WSContext = createContext<{
@@ -12,24 +17,19 @@ export const WSContext = createContext<{
   conn: null,
 });
 
+const listeners: Map<string, (data: unknown) => void> = new Map();
+
 export function WebSocketProvider({ children }: PropsWithChildren) {
-  const [conn, setConn] = useState<Conn | null>(null);
-
-  useEffect(() => {
-    if (!conn) {
-      const ws = new WebSocket('ws://localhost:3000');
-
-      const listeners: Map<string, (data: unknown) => void> = new Map();
-
-      ws.onopen = () => {
+  const { getWebSocket, sendJsonMessage, readyState } = useWebSocket(
+    'ws://localhost:3000',
+    {
+      onOpen() {
         console.log('Connection opened');
-
-        // @ts-expect-error For dev
-        window.conn = ws;
-      };
-
-      ws.onmessage = (e) => {
+      },
+      onMessage(e) {
         const reply = JSON.parse(e.data) as { nonce: string; data: unknown };
+
+        console.log('Got reply with nonce: ' + reply.nonce);
 
         const handler = listeners.get(reply.nonce);
         if (!handler) {
@@ -38,27 +38,29 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
         }
 
         handler(reply.data);
-      };
-
-      setConn({
-        ws,
-        addListener: (nonce, cb) => {
-          listeners.set(nonce, cb);
-
-          return () => listeners.delete(nonce);
-        },
-      });
+      },
     }
-
-    return () => {
-      if (conn) {
-        conn.ws.close();
-      }
-    };
-  }, [conn]);
+  );
 
   return (
-    <WSContext.Provider value={useMemo(() => ({ conn }), [conn])}>
+    <WSContext.Provider
+      value={useMemo(
+        () => ({
+          sendJsonMessage,
+          conn: {
+            ws: getWebSocket(),
+            addListener(nonce, cb) {
+              listeners.set(nonce, cb);
+              console.log('added listener for nonce: ' + nonce);
+
+              return () => listeners.delete(nonce);
+            },
+            sendJsonMessage,
+          },
+        }),
+        [readyState, getWebSocket, sendJsonMessage]
+      )}
+    >
       {children}
     </WSContext.Provider>
   );

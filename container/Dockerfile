@@ -3,8 +3,9 @@ FROM oven/bun:1.1.4 as base
 WORKDIR /root/driver
 
 # Install esential packages
-RUN apt update -y
-RUN apt install vim -y
+RUN apt-get update -y && \
+    apt-get upgrade -y && \
+    apt-get install -y git
 
 # install dependencies into temp directory
 # this will cache them and speed up future builds

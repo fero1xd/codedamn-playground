@@ -12,6 +12,7 @@ const main = () => {
 
   // TODO: Add authentication
   wss.on('connection', (ws) => {
+    console.log('got connection');
     ws.on('message', async (data, isBinary) => {
       if (isBinary) return;
 
@@ -20,17 +21,26 @@ const main = () => {
       const { success: zodSuccess, data: message } = parseMessage(json);
 
       if (!success || !zodSuccess) {
+        console.log('invalid ws message');
         return;
       }
 
-      console.log(message);
-
       switch (message?.event) {
-        case IncomingMessage.FILE_TREE:
+        case IncomingMessage.GENERATE_ROOT_TREE:
           sendResponse(
             {
               nonce: message.nonce,
-              data: await generateFileTree(),
+              data: await generateFileTree(process.env.WORK_DIR!),
+            },
+            ws
+          );
+          break;
+
+        case IncomingMessage.GENERATE_TREE:
+          sendResponse(
+            {
+              nonce: message.nonce,
+              data: await generateFileTree(message.path),
             },
             ws
           );

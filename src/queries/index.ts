@@ -1,35 +1,43 @@
 import { Conn } from '@/providers/ws';
 import { v4 } from 'uuid';
+import { Child, Root } from './types';
 
-export type Child = {
-  name: string;
-  isDir: boolean;
-  path: string;
-  children: Child[];
-};
-export type Root = Pick<Child, 'children'>;
+// 5 Seconds
+const QUERY_TIMEOUT = 5 * 1000;
 
-const requestFileTree = (conn: Conn) => {
+const requestFileTree = (conn: Conn, path?: string) => {
   const nonce = v4();
-  const { ws, addListener } = conn;
+  const { addListener, sendJsonMessage } = conn;
 
-  ws.send(
-    JSON.stringify({
-      nonce,
-      event: 'FILE_TREE',
-    })
-  );
+  const p = new Promise<Root | Child>((res, rej) => {
+    let timeout: NodeJS.Timeout | null = null;
 
-  return new Promise<Root>((res) => {
-    addListener(nonce, (data) => {
-      console.log('resolved');
-      res(data as Root);
+    const removeListener = addListener(nonce, (data) => {
+      console.log('resolved query with nonce ' + nonce);
+      if (timeout) clearTimeout(timeout);
+
+      removeListener();
+      res(data as Root | Child);
     });
+
+    timeout = setTimeout(() => {
+      removeListener();
+      rej('Query timed out');
+    }, QUERY_TIMEOUT);
   });
+
+  sendJsonMessage({
+    nonce,
+    event: path ? 'GENERATE_TREE' : 'GENERATE_ROOT_TREE',
+    path: path || undefined,
+  });
+
+  return p;
 };
 
 export const queries = {
-  file_tree: requestFileTree,
+  GENERATE_ROOT_TREE: requestFileTree,
+  GENERATE_TREE: requestFileTree,
 };
 
 export type QueryKeys = keyof typeof queries;

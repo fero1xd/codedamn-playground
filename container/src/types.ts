@@ -1,16 +1,22 @@
 export enum IncomingMessage {
-  FILE_TREE = 'FILE_TREE',
+  GENERATE_ROOT_TREE = 'GENERATE_ROOT_TREE',
+  GENERATE_TREE = 'GENERATE_TREE',
   FILE_CONTENT = 'FILE_CONTENT',
   SAVE_CHANGES = 'SAVE_CHANGES',
 }
 
-export type Child = {
+export type Child = Node & {
   name: string;
   isDir: boolean;
-  path: string;
-  children: Child[];
+  depth?: number;
 };
-export type Root = Pick<Child, 'children'>;
+
+export type Node = {
+  children: Child[];
+  path: string;
+};
+
+export type Root = Node;
 
 export type ResponseType = {
   nonce: string;

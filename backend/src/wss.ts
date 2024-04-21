@@ -19,25 +19,19 @@ export function createWSS() {
       if (!req.url) {
         return false;
       }
-
       const { pathname } = new URL(req.url, `http://${req.headers.host}`);
-
       if (!pathname.startsWith('/attach/')) {
         return false;
       }
-
       const remaining = pathname.slice('/attach/'.length);
       if (!remaining) {
         return false;
       }
-
       if (remaining.includes('?') || remaining.includes('/')) {
         return false;
       }
-
       const containerId = remaining.trim();
       const exists = await checkPlaygroundStatus(containerId, 'running');
-
       if (!exists) {
         sock.write(
           'HTTP/1.1 400 No playground found with this id, try booting it up first\r\n\r\n'
@@ -45,11 +39,9 @@ export function createWSS() {
         sock.destroy();
         return true;
       }
-
       wss.handleUpgrade(req, sock, head, function done(ws) {
         wss.emit('connection', ws);
       });
-
       return true;
     };
 

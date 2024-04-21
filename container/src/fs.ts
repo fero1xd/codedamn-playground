@@ -1,43 +1,29 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { Child, Root } from './types';
+import { Root } from './types';
 
-export const generateFileTree = async () => {
-  // Will be passed as an env variable to container
-  const workDir = process.env.WORK_DIR as string;
+export const generateFileTree = async (dirName: string) => {
+  const contents = await fs.readdir(dirName, { withFileTypes: true });
+
+  const sortedContents = contents.sort(
+    (a, b) => (a.isDirectory() ? 0 : 1) - (b.isDirectory() ? 0 : 1)
+  );
 
   const root: Root = {
+    path: dirName,
     children: [],
   };
 
-  const traverseFs = async (dirName: string, node: Child | Root) => {
-    const contents = await fs.readdir(dirName, { withFileTypes: true });
+  for (const c of sortedContents) {
+    const p = path.join(c.path, c.name);
 
-    for (const c of contents) {
-      const p = path.join(c.path, c.name);
-
-      if (c.isFile()) {
-        node.children.unshift({
-          name: c.name,
-          isDir: false,
-          children: [],
-          path: p,
-        });
-        continue;
-      }
-
-      const t: Child = {
-        name: c.name,
-        isDir: true,
-        children: [],
-        path: p,
-      };
-      await traverseFs(path.resolve(dirName, c.name), t);
-      node.children.unshift(t);
-    }
-  };
-
-  await traverseFs(workDir, root);
+    root.children.push({
+      isDir: c.isDirectory(),
+      path: p,
+      name: c.name,
+      children: [],
+    });
+  }
 
   return root;
 };

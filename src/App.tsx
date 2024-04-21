@@ -1,10 +1,10 @@
 import { useDarkMode } from '@/hooks/use-dark-mode';
 import { Layout } from './layout';
 import { Editor } from './components/editor';
-import { TerminalX } from './components/terminal';
 import { useState } from 'react';
 import { FitAddon } from '@xterm/addon-fit';
 import { Browser } from './components/browser';
+import { FileTree } from './components/file-tree';
 
 export function App() {
   useDarkMode();
@@ -15,7 +15,7 @@ export function App() {
   return (
     <Layout
       editor={<Editor />}
-      fileTree={<></>}
+      fileTree={<FileTree />}
       terminal={<></>}
       preview={<Browser />}
       onLayout={() => {

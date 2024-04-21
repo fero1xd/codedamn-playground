@@ -7,7 +7,11 @@ const baseMessage = z.object({
 
 export const incomingMessage = z.discriminatedUnion('event', [
   baseMessage.extend({
-    event: z.literal(IncomingMessage.FILE_TREE),
+    event: z.literal(IncomingMessage.GENERATE_ROOT_TREE),
+  }),
+  baseMessage.extend({
+    event: z.literal(IncomingMessage.GENERATE_TREE),
+    path: z.string(),
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.FILE_CONTENT),
