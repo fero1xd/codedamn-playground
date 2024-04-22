@@ -5,6 +5,7 @@ import { IncomingMessage, OutgoingMessageType } from './types';
 import { generateFileTree, getFileContent } from './fs';
 import { TerminalManager } from './sessions';
 import { v4 } from 'uuid';
+import { env } from './env';
 
 const main = () => {
   const wss = new WebSocketServer({
@@ -31,21 +32,11 @@ const main = () => {
       }
 
       switch (message?.event) {
-        case IncomingMessage.GENERATE_ROOT_TREE:
-          sendResponse(
-            {
-              nonce: message.nonce,
-              data: await generateFileTree(process.env.WORK_DIR!),
-            },
-            ws
-          );
-          break;
-
         case IncomingMessage.GENERATE_TREE:
           sendResponse(
             {
               nonce: message.nonce,
-              data: await generateFileTree(message.path),
+              data: await generateFileTree(message?.data?.path || env.WORK_DIR),
             },
             ws
           );
@@ -55,7 +46,7 @@ const main = () => {
           sendResponse(
             {
               nonce: message.nonce,
-              data: await getFileContent(message.filePath),
+              data: await getFileContent(message.data.filePath),
             },
             ws
           );
@@ -72,7 +63,7 @@ const main = () => {
           break;
 
         case IncomingMessage.TERMINAL_USER_CMD:
-          terminalManager.write(wsId, message.cmd);
+          terminalManager.write(wsId, message.data.cmd);
           break;
         case IncomingMessage.RESIZE_TERMINAL:
           terminalManager.resize(wsId, message.data);

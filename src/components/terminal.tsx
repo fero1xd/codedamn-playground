@@ -36,7 +36,7 @@ export function TerminalX({
         JSON.stringify({
           nonce: '__ignored__',
           event: 'TERMINAL_USER_CMD',
-          cmd,
+          data: { cmd },
         })
       );
     });

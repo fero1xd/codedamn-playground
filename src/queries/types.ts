@@ -1,20 +1,17 @@
 // These are shared types copied over.. maybe start a monorepo later
 
-export type Child = Node & {
+export interface Child extends Node {
   name: string;
   isDir: boolean;
   depth?: number;
-};
+}
 
-export type Node = {
+export interface Node {
   children: Child[];
   path: string;
-};
+}
 
-export type Root = Node;
+export interface Root extends Node {}
 
-export type WSEvents =
-  | 'GENERATE_ROOT_TREE'
-  | 'GENERATE_TREE'
-  | 'TERMINAL_SESSION_START'
-  | 'TERMINAL_USER_CMD';
+export type FetchEvents = 'GENERATE_TREE' | 'FILE_CONTENT';
+export type WSEvents = 'TERMINAL_USER_CMD' | 'TERMINAL_SESSION_START';

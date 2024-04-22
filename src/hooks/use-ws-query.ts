@@ -1,20 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
 import { useConnection } from './use-connection';
-import { queries, QueryKeys } from '@/queries';
+import { FetchEvents } from '@/queries/types';
+import { Conn } from '@/providers/ws';
 
-type TParams<T extends QueryKeys> =
-  Parameters<(typeof queries)[T]> extends [_, ...infer Rest] ? Rest : never;
+type TParams<T extends FetchEvents> =
+  Parameters<Conn['queries'][T]> extends [...infer Rest] ? Rest : never;
 
-export function useWSQuery<K extends QueryKeys, P extends TParams<K>>(
-  key: K,
-  params?: P
+export type QueryKey<T extends FetchEvents> = [T, ...params: TParams<T>];
+
+export function useWSQuery<K extends FetchEvents>(
+  key: QueryKey<K>,
+  staleTime?: number
 ) {
   const connection = useConnection();
+  const queries = connection!.queries;
 
   type QueryReturnType = Awaited<ReturnType<(typeof queries)[K]>>;
 
   return useQuery<QueryReturnType>({
-    queryKey: [key],
+    queryKey: key,
     queryFn: async () => {
       if (!connection) throw new Error('something went very wrong');
 
@@ -22,11 +26,16 @@ export function useWSQuery<K extends QueryKeys, P extends TParams<K>>(
 
       // Some weird type issue
       /* eslint-disable-next-line */
-      const fn = queries[key] as any;
+      const fn = connection.queries[key[0]] as any;
 
-      return await fn(connection, ...(params || []));
+      return await fn(...(key.length > 1 ? key.slice(1) : []));
     },
-    enabled: !!connection && !!connection.ws && connection.ws.readyState === 1,
+    enabled:
+      !!connection &&
+      !!connection.ws &&
+      connection.ws.readyState === 1 &&
+      !!connection.queries,
     refetchOnWindowFocus: false,
+    staleTime: staleTime === undefined ? 0 : staleTime,
   });
 }

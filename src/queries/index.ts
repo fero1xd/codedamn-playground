@@ -39,5 +39,3 @@ export const queries = {
   GENERATE_ROOT_TREE: requestFileTree,
   GENERATE_TREE: requestFileTree,
 };
-
-export type QueryKeys = keyof typeof queries;

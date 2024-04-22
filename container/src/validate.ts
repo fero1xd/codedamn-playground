@@ -7,27 +7,23 @@ const baseMessage = z.object({
 
 export const incomingMessage = z.discriminatedUnion('event', [
   baseMessage.extend({
-    event: z.literal(IncomingMessage.GENERATE_ROOT_TREE),
-  }),
-  baseMessage.extend({
     event: z.literal(IncomingMessage.GENERATE_TREE),
-    path: z.string(),
+    data: z.object({ path: z.string().optional() }).optional(),
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.FILE_CONTENT),
-    filePath: z.string(),
+    data: z.object({ filePath: z.string() }),
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.SAVE_CHANGES),
-    filePath: z.string(),
-    changes: z.string(),
+    data: z.object({ filePath: z.string(), changes: z.string() }),
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.TERMINAL_SESSION_START),
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.TERMINAL_USER_CMD),
-    cmd: z.string(),
+    data: z.object({ cmd: z.string() }),
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.RESIZE_TERMINAL),

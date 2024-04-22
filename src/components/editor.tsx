@@ -1,52 +1,98 @@
-import { Monaco, Editor as MonacoEditor } from '@monaco-editor/react';
-import type * as monaco from 'monaco-editor';
+import {
+  Monaco,
+  Editor as MonacoEditor,
+  useMonaco,
+} from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 import { useMaterial } from './editor/use-material';
-import * as prettier from 'prettier/standalone';
-import typescriptPlugin from 'prettier/plugins/typescript';
-import * as prettierPluginEstree from 'prettier/plugins/estree';
+import { useEffect, useRef } from 'react';
+import { Child } from '@/queries/types';
+import { useQueryClient } from '@tanstack/react-query';
+import { useConnection } from '@/hooks/use-connection';
+import { configureHtml } from './editor/languages/html';
+import { configureCss } from './editor/languages/css';
+import { configureJson } from './editor/languages/json';
+import { configureMd } from './editor/languages/md';
+import { setupKeybindings } from './editor/keybindings';
+import { configureTs } from './editor/languages/typescript';
+import { configureJs } from './editor/languages/javascript';
 
-export function Editor() {
+const editorStates = new Map();
+
+export function Editor({ selectedFile }: { selectedFile: Child | undefined }) {
   const { themeLoaded } = useMaterial();
 
-  const onMount = async (e: monaco.editor.IStandaloneCodeEditor, m: Monaco) => {
-    // Typescript settings
-    const compilerOptions = {
-      allowjs: true,
-      allowsyntheticdefaultimports: true,
-      alwaysstrict: true,
-      noemit: true,
-      typeRoots: ['node_modules/@types'],
-      esModuleInterop: true,
-    };
+  const monacoInstance = useMonaco() as Monaco | null;
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>();
 
-    m.languages.typescript.typescriptDefaults.setCompilerOptions(
-      compilerOptions
+  const queryClient = useQueryClient();
+  const conn = useConnection();
+
+  useEffect(() => {
+    if (!selectedFile || !conn || !editorRef.current || !monacoInstance) return;
+
+    const currentModel = editorRef.current.getModel();
+
+    if (
+      currentModel &&
+      currentModel.uri !== monaco.Uri.parse(`file:///${selectedFile.name}`)
+    ) {
+      console.log('setting view state');
+      editorStates.set(
+        currentModel.uri.toString(),
+        editorRef.current.saveViewState()
+      );
+    }
+
+    const existingModel = monacoInstance.editor.getModel(
+      monaco.Uri.parse(`file:///${selectedFile.name}`)
     );
-    m.languages.typescript.javascriptDefaults.setCompilerOptions(
-      compilerOptions
-    );
 
-    m.languages.typescript.typescriptDefaults.setEagerModelSync(true);
-    m.languages.typescript.javascriptDefaults.setEagerModelSync(true);
+    if (existingModel) {
+      // @ts-expect-error broken types
+      editorRef.current.setModel(existingModel);
 
-    m.languages.registerDocumentFormattingEditProvider('typescript', {
-      async provideDocumentFormattingEdits(model) {
-        const text = await prettier.format(model.getValue(), {
-          plugins: [prettierPluginEstree, typescriptPlugin],
-          parser: 'typescript',
-          useTabs: true,
-          trailingComma: 'all',
-          printWidth: 100,
-        });
+      const viewState = editorStates.get(existingModel.uri.toString());
+      if (viewState) {
+        console.log('restoring view state');
+        editorRef.current.restoreViewState(viewState);
 
-        return [
-          {
-            range: model.getFullModelRange(),
-            text,
+        editorRef.current.focus();
+      }
+    } else {
+      queryClient
+        .fetchQuery({
+          queryKey: ['FETCH_CONTENT'],
+          queryFn: () => {
+            return conn.queries.FILE_CONTENT(selectedFile.path);
           },
-        ];
-      },
-    });
+          gcTime: 0,
+        })
+        .then((contents) => {
+          console.log('adding model file:///', selectedFile.name);
+          const createdModel = monacoInstance.editor.createModel(
+            contents,
+            undefined,
+            monaco.Uri.parse(`file:///${selectedFile.name}`)
+          );
+
+          // @ts-expect-error Broken types
+          editorRef.current?.setModel(createdModel);
+        });
+    }
+  }, [conn, editorRef, monacoInstance, selectedFile, queryClient]);
+
+  const onMount = async (e: monaco.editor.IStandaloneCodeEditor, m: Monaco) => {
+    editorRef.current = e;
+
+    // Language configurations start here
+    configureHtml(e, m);
+    configureCss(m);
+    configureJson(m);
+    configureMd(m);
+    configureTs(e, m);
+    configureJs(e, m);
+    // Language configurations end here
 
     // NOTE: FOR JUMP TO DEF IN MULTI MODEL SETUP
     // const editorService = e._codeEditorService;
@@ -66,36 +112,10 @@ export function Editor() {
     //   return result; // always return the base result
     // };
 
-    // @ts-expect-error Again, weird type errors
-    e.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function () {
-      console.log('formatting code');
-      e.getAction('editor.action.formatDocument')?.run();
-    });
+    setupKeybindings(e);
 
+    // Start with a fresh slate
     m.editor.getModels().forEach((m) => m.dispose());
-
-    const model = m.editor.createModel(
-      'import {a} from                          "./sec"',
-      'typescript',
-      m.Uri.parse('file:///main.ts')
-    );
-
-    m.editor.createModel(
-      'export const a = 5',
-      'typescript',
-      m.Uri.parse('file:///sec.ts')
-    );
-
-    const d = await fetch('https://unpkg.com/@types/node@10.11.0/index.d.ts');
-    const t = await d.text();
-
-    m.languages.typescript.typescriptDefaults.addExtraLib(
-      t,
-      'file:///node_modules/@types/node/index.d.ts'
-    );
-
-    // @ts-expect-error aaaa
-    e.setModel(model);
   };
 
   if (!themeLoaded) {
@@ -109,12 +129,11 @@ export function Editor() {
   return (
     <MonacoEditor
       height='100%'
-      defaultLanguage='typescript'
       options={{
         minimap: {
           enabled: false,
         },
-        fontSize: 18,
+        fontSize: 14,
         mouseWheelZoom: true,
         automaticLayout: true,
         fontFamily: 'Cascadia Code',
