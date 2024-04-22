@@ -22,6 +22,17 @@ export const incomingMessage = z.discriminatedUnion('event', [
     filePath: z.string(),
     changes: z.string(),
   }),
+  baseMessage.extend({
+    event: z.literal(IncomingMessage.TERMINAL_SESSION_START),
+  }),
+  baseMessage.extend({
+    event: z.literal(IncomingMessage.TERMINAL_USER_CMD),
+    cmd: z.string(),
+  }),
+  baseMessage.extend({
+    event: z.literal(IncomingMessage.RESIZE_TERMINAL),
+    data: z.object({ cols: z.number(), rows: z.number() }),
+  }),
 ]);
 
 export type IncomingMessageType = z.infer<typeof incomingMessage>;

@@ -13,4 +13,8 @@ export type Node = {
 
 export type Root = Node;
 
-export type WSEvents = 'GENERATE_ROOT_TREE' | 'GENERATE_TREE';
+export type WSEvents =
+  | 'GENERATE_ROOT_TREE'
+  | 'GENERATE_TREE'
+  | 'TERMINAL_SESSION_START'
+  | 'TERMINAL_USER_CMD';

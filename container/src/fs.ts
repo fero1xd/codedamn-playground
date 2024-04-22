@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { Root } from './types';
+import { env } from './env';
 
 export const generateFileTree = async (dirName: string) => {
   const contents = await fs.readdir(dirName, { withFileTypes: true });
@@ -48,4 +49,12 @@ export const getFileContent = async (filePath: string) => {
   lruCache.set(filePath, c);
 
   return c;
+};
+
+export const createDirIfNotExists = async (dirPath: string) => {
+  try {
+    await fs.access(dirPath);
+  } catch (_) {
+    await fs.mkdir(env.WORK_DIR, { recursive: true });
+  }
 };

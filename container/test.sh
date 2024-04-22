@@ -1,6 +1,10 @@
-#!/bin/bash
-echo "Hello there!"
-while true; do
-    # Add your desired commands here
-    sleep 1
-done
+#!/usr/bin/env bash
+whoami
+
+sudo -i -u pranjal bash << EOF
+echo "In"
+whoami
+EOF
+echo "Out"
+
+whoami

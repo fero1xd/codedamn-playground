@@ -1,27 +1,67 @@
 import { useDarkMode } from '@/hooks/use-dark-mode';
 import { Layout } from './layout';
 import { Editor } from './components/editor';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FitAddon } from '@xterm/addon-fit';
-import { Browser } from './components/browser';
-import { FileTree } from './components/file-tree';
+import { TerminalX } from './components/terminal';
+import { Dimensions } from './lib/types';
+import { Terminal } from '@xterm/xterm';
+import { useDebouncedCallback } from 'use-debounce';
 
 export function App() {
   useDarkMode();
 
   // TODO: Refactor this
-  const [fitAddon] = useState(() => new FitAddon());
+  const fitAddon = useMemo(() => new FitAddon(), []);
+
+  const terminal = useMemo(() => {
+    const t = new Terminal({
+      theme: {
+        background: '#04090f',
+      },
+      cursorBlink: true,
+      scrollOnUserInput: true,
+      fontFamily: 'JetBrains Mono, monospace',
+      fontSize: 14,
+      cursorStyle: 'bar',
+    });
+
+    console.log('loading up fit addon');
+    t.loadAddon(fitAddon);
+
+    return t;
+  }, [fitAddon]);
+
+  // Maybe later debounce this
+  const [dimensions, _setDimensions] = useState<Dimensions>();
+
+  const setDimensionsDebounce = useDebouncedCallback((value: Dimensions) => {
+    console.log('**actually setting dimensions now**');
+    _setDimensions(value);
+  }, 1000);
+
+  const fitTerm = () => {
+    console.log('fit terminal');
+    fitAddon.fit();
+
+    const { rows, cols } = terminal;
+    console.log(terminal.rows, terminal.cols);
+    setDimensionsDebounce({ rows, cols });
+  };
 
   return (
     <Layout
       editor={<Editor />}
-      fileTree={<FileTree />}
-      terminal={<></>}
-      preview={<Browser />}
-      onLayout={() => {
-        console.log('layout change');
-        fitAddon.fit();
-      }}
+      fileTree={<></>}
+      terminal={
+        <TerminalX
+          dimensions={dimensions}
+          terminal={terminal}
+          fitTerm={fitTerm}
+        />
+      }
+      preview={<></>}
+      onLayout={fitTerm}
     />
   );
 }

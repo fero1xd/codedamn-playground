@@ -25,9 +25,12 @@ export function Layout({
       <ResizablePanelGroup
         direction='horizontal'
         className='max-w-screen min-h-screen rounded-lg border'
-        onLayout={onLayout}
+        onLayout={() => {
+          console.log('root layout change');
+          onLayout();
+        }}
       >
-        <ResizablePanel defaultSize={20} maxSize={20} minSize={10}>
+        <ResizablePanel defaultSize={10} maxSize={20} minSize={10}>
           {/* <div className='flex h-full items-center justify-center p-6'> */}
           {/* <span className='font-semibold'>File tree</span> */}
           {typeof fileTree === 'function' ? fileTree() : fileTree}
@@ -36,7 +39,7 @@ export function Layout({
 
         <ResizableHandle />
 
-        <ResizablePanel defaultSize={55}>
+        <ResizablePanel defaultSize={80}>
           <ResizablePanelGroup direction='vertical' onLayout={onLayout}>
             <ResizablePanel defaultSize={75}>
               {/* <div className='flex h-full items-center justify-center p-6'>
@@ -56,7 +59,7 @@ export function Layout({
 
         <ResizableHandle />
 
-        <ResizablePanel defaultSize={25} maxSize={30} minSize={10}>
+        <ResizablePanel defaultSize={10} maxSize={30} minSize={10}>
           {/* <div className='flex h-full items-center justify-center p-6'>
             <span className='font-semibold'>preview</span>
           </div> */}

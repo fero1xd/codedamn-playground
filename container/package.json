@@ -8,6 +8,7 @@
     "start:dev": "tsx watch src/index.ts"
   },
   "devDependencies": {
+    "@types/uuid": "^9.0.8",
     "@types/ws": "^8.5.10",
     "bun-types": "latest",
     "tsx": "^4.7.2"
@@ -16,6 +17,8 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "node-pty": "^1.0.0",
+    "uuid": "^9.0.1",
     "ws": "^8.16.0",
     "zod": "^3.22.4"
   }
