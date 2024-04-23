@@ -2,10 +2,11 @@ import { WebSocketServer } from 'ws';
 import { parseJSON } from './utils';
 import { parseMessage, sendResponse } from './ws';
 import { IncomingMessage, OutgoingMessageType } from './types';
-import { generateFileTree, getFileContent } from './fs';
+import { generateFileTree, getFileContent, watchForDepsChange } from './fs';
 import { TerminalManager } from './sessions';
 import { v4 } from 'uuid';
 import { env } from './env';
+import path from 'path';
 
 const main = () => {
   const wss = new WebSocketServer({
@@ -15,9 +16,36 @@ const main = () => {
 
   const terminalManager = new TerminalManager();
 
+  watchForDepsChange(path.join(env.WORK_DIR, env.DEPS_FILE), (deps) => {
+    wss.clients.forEach((c) => {
+      sendResponse(
+        {
+          serverEvent: OutgoingMessageType.INSTALL_DEPS,
+          data: deps,
+        },
+        c
+      );
+    });
+  });
+
   // TODO: Add authentication
   wss.on('connection', (ws) => {
     const wsId = v4();
+
+    getFileContent(path.join(env.WORK_DIR, env.DEPS_FILE)).then((deps) => {
+      const json = JSON.parse(deps);
+
+      sendResponse(
+        {
+          serverEvent: OutgoingMessageType.INSTALL_DEPS,
+          data: {
+            dependencies: json.dependencies || undefined,
+            devDependencies: json.devDependencies || undefined,
+          },
+        },
+        ws
+      );
+    });
 
     ws.on('message', async (data, isBinary) => {
       if (isBinary) return;

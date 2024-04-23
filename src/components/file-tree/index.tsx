@@ -34,7 +34,6 @@ export function FileTree({
   useMemo(() => {
     if (treeRoot) {
       // Later improve this by only giving changed portion of the tree and avoid recalculating depth for each element
-      console.log('calculating depth');
       addDepth(treeRoot.children, 0);
 
       queryClient.setQueryData(['GENERATE_TREE'], treeRoot);
@@ -53,7 +52,6 @@ export function FileTree({
     console.log(child.path);
 
     if (child.isDir) {
-      console.log('selected a dir');
       setSelectedDir(child);
       return;
     }

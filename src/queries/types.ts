@@ -14,4 +14,14 @@ export interface Node {
 export interface Root extends Node {}
 
 export type FetchEvents = 'GENERATE_TREE' | 'FILE_CONTENT';
+
+// From client -> server
 export type WSEvents = 'TERMINAL_USER_CMD' | 'TERMINAL_SESSION_START';
+
+// From client <- server
+export type ServerEvent = 'INSTALL_DEPS' | 'TERMINAL_DATA';
+
+export type Dependencies = {
+  dependencies: Record<string, string>;
+  devDependencies: Record<string, string>;
+};

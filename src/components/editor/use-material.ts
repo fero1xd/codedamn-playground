@@ -12,7 +12,6 @@ export function useMaterial() {
     });
 
     loader.init().then(async (m) => {
-      console.log('fetching theme');
       const res = await fetch('/theme.json');
       const json = await res.json();
       m.editor.defineTheme('uitheme', json);

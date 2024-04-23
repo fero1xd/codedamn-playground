@@ -9,14 +9,22 @@ export function configureTs(e: Editor, m: Monaco) {
 
   // Typescript settings
   const compilerOptions = {
-    allowjs: true,
-    allowsyntheticdefaultimports: true,
-    alwaysstrict: true,
-    noemit: true,
-    typeRoots: ['node_modules/@types'],
-    esModuleInterop: true,
-    jsx: m.languages.typescript.JsxEmit.ReactJSX,
+    jsx: m.languages.typescript.JsxEmit.Preserve,
+    jsxFactory: 'React.createElement',
+    allowNonTsExtensions: true,
+    allowImportingTsExtensions: true,
+    allowJs: false,
+    target: m.languages.typescript.ScriptTarget.Latest,
+    experimentalDecorators: true,
+    allowSyntheticDefaultImports: true,
+    lib: ['esnext', 'dom'],
+    module: m.languages.typescript.ModuleKind.ESNext,
+    jsxFragmentFactory: 'React.Fragment',
   };
 
   m.languages.typescript.typescriptDefaults.setCompilerOptions(compilerOptions);
+  m.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+    noSemanticValidation: false,
+    noSyntaxValidation: false,
+  });
 }

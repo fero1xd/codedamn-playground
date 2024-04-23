@@ -14,7 +14,9 @@ export function App() {
 
   return (
     <Layout
-      editor={<Editor selectedFile={selectedFile} />}
+      editor={
+        <Editor selectedFile={selectedFile} setSelectedFile={setSelectedFile} />
+      }
       fileTree={
         <FileTree
           selectedFile={selectedFile}

@@ -22,6 +22,7 @@ export type Root = Node;
 
 export enum OutgoingMessageType {
   TERMINAL_DATA = 'TERMINAL_DATA',
+  INSTALL_DEPS = 'INSTALL_DEPS',
 }
 
 export type ResponseType = {

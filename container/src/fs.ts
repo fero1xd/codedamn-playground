@@ -2,6 +2,25 @@ import fs from 'fs/promises';
 import path from 'path';
 import { Root } from './types';
 import { env } from './env';
+import { watchFile } from 'fs';
+
+export const watchForDepsChange = (
+  path: string,
+  cb: (deps: {
+    dependencies: Record<string, string>;
+    devDependencies: Record<string, string>;
+  }) => void
+) => {
+  watchFile(path, async () => {
+    const file = await fs.readFile(path, { encoding: 'utf-8' });
+    const json = JSON.parse(file);
+
+    cb({
+      dependencies: json.dependencies || undefined,
+      devDependencies: json.devDependencies || undefined,
+    });
+  });
+};
 
 export const generateFileTree = async (dirName: string) => {
   const contents = await fs.readdir(dirName, { withFileTypes: true });

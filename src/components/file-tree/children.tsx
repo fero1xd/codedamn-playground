@@ -40,7 +40,6 @@ function Item({
         key={c.path}
         onClick={() => {
           if (c.isDir) {
-            console.log('opening dir', c.path);
             setOpen((o) => !o);
           }
           onSelect(c);

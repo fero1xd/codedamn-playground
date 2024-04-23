@@ -1,4 +1,4 @@
-import { Root, FetchEvents } from '@/queries/types';
+import { Root, FetchEvents, ServerEvent } from '@/queries/types';
 import { PropsWithChildren, useMemo } from 'react';
 import { createContext } from 'react';
 import useWebSocket from 'react-use-websocket';
@@ -14,8 +14,13 @@ export type Conn = {
 
   queries: {
     GENERATE_TREE: (path?: string) => Promise<Root>;
-    FILE_CONTENT: (filePath: string) => Promise<string>;
   };
+
+  fetchCall<T = unknown>(key: FetchEvents, data: unknown): Promise<T>;
+  addSubscription<T = unknown>(
+    event: ServerEvent,
+    cb: (data: T) => void
+  ): () => void;
 };
 
 export const WSContext = createContext<{
@@ -25,6 +30,10 @@ export const WSContext = createContext<{
 });
 
 const listeners: Map<string, (data: unknown) => void> = new Map();
+const subscriptions: Map<
+  string,
+  Map<string, (data: unknown) => void>
+> = new Map();
 
 export function WebSocketProvider({ children }: PropsWithChildren) {
   const { getWebSocket, sendJsonMessage, readyState } = useWebSocket(
@@ -34,11 +43,20 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
         console.log('Connection opened');
       },
       onMessage(e) {
-        const reply = JSON.parse(e.data) as { nonce: string; data: unknown };
+        const reply = JSON.parse(e.data) as {
+          nonce?: string;
+          data: unknown;
+          serverEvent?: ServerEvent;
+        };
 
-        console.log('Got reply with nonce: ' + reply.nonce);
+        if (reply.serverEvent) {
+          for (const cb of subscriptions.get(reply.serverEvent) || []) {
+            cb[1](reply.data);
+          }
+          return;
+        }
 
-        const handler = listeners.get(reply.nonce);
+        const handler = listeners.get(reply.nonce!);
         if (!handler) {
           console.log('no handler found for message', reply);
           return;
@@ -46,17 +64,21 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
 
         handler(reply.data);
       },
+      reconnectAttempts: 5,
+      shouldReconnect: () => true,
     }
   );
 
   const addListener = (nonce: string, cb: (data: unknown) => void) => {
     listeners.set(nonce, cb);
-    console.log('added listener for nonce: ' + nonce);
 
     return () => listeners.delete(nonce);
   };
 
-  const fetchCall = (query: FetchEvents, data: unknown) => {
+  function fetchCall<T = unknown>(
+    query: FetchEvents,
+    data: unknown
+  ): Promise<T> {
     const nonce = v4();
 
     sendJsonMessage({
@@ -65,15 +87,14 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
       data,
     });
 
-    const p = new Promise<unknown>((res, rej) => {
+    const p = new Promise<T>((res, rej) => {
       let timeout: NodeJS.Timeout | null = null;
 
       const removeListener = addListener(nonce, (data) => {
-        console.log('resolved query with nonce ' + nonce);
         if (timeout) clearTimeout(timeout);
 
         removeListener();
-        res(data);
+        res(data as T);
       });
 
       timeout = setTimeout(() => {
@@ -83,7 +104,26 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
     });
 
     return p;
-  };
+  }
+
+  function addSubscriptionForServerEvent<T = unknown>(
+    event: ServerEvent,
+    cb: (data: T) => void
+  ) {
+    let subs = subscriptions.get(event);
+    const id = v4();
+
+    if (!subs) {
+      subscriptions.set(event, new Map());
+      subs = subscriptions.get(event)!;
+    }
+
+    subs.set(id, cb as any);
+
+    return () => {
+      subs.delete(id);
+    };
+  }
 
   return (
     <WSContext.Provider
@@ -100,16 +140,20 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
                   path,
                 }) as Promise<Root>;
               },
-              FILE_CONTENT(filePath) {
-                return fetchCall('FILE_CONTENT', {
-                  filePath,
-                }) as Promise<string>;
-              },
             },
+            // This is provided when no state management for query is required
+            fetchCall,
+            addSubscription: addSubscriptionForServerEvent,
           },
         }),
-
-        [readyState, getWebSocket, sendJsonMessage, fetchCall, addListener]
+        [
+          readyState,
+          getWebSocket,
+          addSubscriptionForServerEvent,
+          sendJsonMessage,
+          fetchCall,
+          addListener,
+        ]
       )}
     >
       {children}
