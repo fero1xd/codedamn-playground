@@ -12,7 +12,6 @@ export function App() {
   // useTerminal()
 
   const [selectedFile, setSelectedFile] = useState<Child>();
-
   return (
     <>
       <LoadingPanel />

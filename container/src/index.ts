@@ -16,6 +16,26 @@ const main = () => {
 
   const terminalManager = new TerminalManager();
 
+  let idleTimeout: NodeJS.Timeout | null = null;
+
+  const terminateProcess = () => {
+    console.log('Idle container exiting it');
+    if (wss.clients.size > 0) {
+      console.log('users are doing nothing... pause the container here');
+      // Todo: 'pause" the container here
+      return;
+    }
+
+    process.exit(0);
+  };
+
+  const resetIdleTimeout = () => {
+    if (idleTimeout) clearTimeout(idleTimeout);
+    idleTimeout = setTimeout(terminateProcess, idleInterval);
+  };
+
+  const idleInterval = 120 * 1000;
+
   watchForDepsChange(path.join(env.WORK_DIR, env.DEPS_FILE), (deps) => {
     wss.clients.forEach((c) => {
       sendResponse(
@@ -28,9 +48,12 @@ const main = () => {
     });
   });
 
+  resetIdleTimeout();
+
   // TODO: Add authentication
   wss.on('connection', (ws) => {
     const wsId = v4();
+    resetIdleTimeout();
 
     getFileContent(path.join(env.WORK_DIR, env.DEPS_FILE)).then((deps) => {
       const json = JSON.parse(deps);
@@ -49,7 +72,7 @@ const main = () => {
 
     ws.on('message', async (data, isBinary) => {
       if (isBinary) return;
-
+      resetIdleTimeout();
       const raw = data.toString();
       const { success, data: json } = parseJSON(raw);
       const { success: zodSuccess, data: message } = parseMessage(json);
