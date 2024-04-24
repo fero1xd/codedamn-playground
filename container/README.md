@@ -1,12 +1,16 @@
-# Available templates for now
+## Available templates for now
 
-React Typescript
-Bun Typescript
-Plain Node JS
+1. React Typescript
+2. Bun Typescript
+3. Node JS
 
-# TODO
+## TODO
 
 - [ ] Modify dts-bundle to be in-memory
 - [ ] Better watch implementation
 
-- Work directory will be /home/bun/app
+## Env variables
+
+1. WORK_DIR
+2. DEPS_FILE
+3. TEMPLATE
