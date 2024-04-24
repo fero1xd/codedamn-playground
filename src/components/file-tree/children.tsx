@@ -56,11 +56,10 @@ function Item({ node, selectedDir, onSelect, selectedFile }: ItemProps) {
         style={{ paddingLeft: `${node.depth * 16}px` }}
       >
         <span className='flex w-[32px] h-[32px] items-center justify-center'>
-          {getIcon(
-            node.name.split('.').pop() || '',
-            node.isDir ? 'closedDirectory' : '',
-            node.name
-          )}
+          {getIcon(node.name.split('.').pop() || '', node.name, {
+            isDir: node.isDir,
+            open,
+          })}
         </span>
 
         <span style={{ marginLeft: 1, marginBottom: 3 }}>{node.name}</span>

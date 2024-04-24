@@ -62,7 +62,7 @@ export function FileTree({
   };
 
   return (
-    <div className='flex flex-col h-full pt-4 overflow-scroll max-h-[99vh]'>
+    <div className='flex flex-col h-full pt-4 overflow-scroll max-h-[99vh] file__tree'>
       <Children
         selectedFile={selectedFile}
         node={treeRoot}
