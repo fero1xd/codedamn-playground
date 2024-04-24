@@ -4,6 +4,7 @@ import { Editor } from './components/editor';
 import { FileTree } from './components/file-tree';
 import { useState } from 'react';
 import { Child } from './queries/types';
+import { LoadingPanel } from './playground/loading';
 
 export function App() {
   useDarkMode();
@@ -13,25 +14,28 @@ export function App() {
   const [selectedFile, setSelectedFile] = useState<Child>();
 
   return (
-    <Layout
-      editor={<Editor selectedFile={selectedFile} />}
-      fileTree={
-        <FileTree
-          selectedFile={selectedFile}
-          setSelectedFile={setSelectedFile}
-        />
-      }
-      terminal={
-        // <TerminalX
-        //   dimensions={dimensions}
-        //   terminal={terminal}
-        //   fitTerm={fitTerm}
-        // />
-        <></>
-      }
-      preview={<></>}
-      // onLayout={fitTerm}
-      onLayout={() => {}}
-    />
+    <>
+      <LoadingPanel />
+      <Layout
+        editor={<Editor selectedFile={selectedFile} />}
+        fileTree={
+          <FileTree
+            selectedFile={selectedFile}
+            setSelectedFile={setSelectedFile}
+          />
+        }
+        terminal={
+          // <TerminalX
+          //   dimensions={dimensions}
+          //   terminal={terminal}
+          //   fitTerm={fitTerm}
+          // />
+          <></>
+        }
+        preview={<></>}
+        // onLayout={fitTerm}
+        onLayout={() => {}}
+      />
+    </>
   );
 }

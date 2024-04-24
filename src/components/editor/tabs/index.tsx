@@ -18,7 +18,7 @@ export function Tabs({
   closeModel,
 }: TabsProps) {
   return (
-    <div className='w-full flex items-center border-b border-b-gray-800'>
+    <div className='w-full flex items-center border-b border-b-gray-800 editor__tabs'>
       {(openedModels || []).map((model, i) => {
         const uriString = model.uri.toString();
         const split = uriString.split('/');
@@ -30,7 +30,8 @@ export function Tabs({
           <div
             key={model.uri.toString()}
             className={cn(
-              'pr-10 pl-3 py-3 bg-transparent relative group text-sm text-gray-500 flex items-center border-t gap-3 border-b',
+              'pr-10 pl-3 py-3 mt-[-0px] mb-[-2px] bg-transparent',
+              'relative group text-sm text-gray-500 flex items-center border-t gap-3 border-b',
               selected &&
                 'text-white bg-[#0f111a] border-b-transparent border-t-blue-500',
               'border-r border-r-gray-800'
@@ -40,7 +41,7 @@ export function Tabs({
             }}
           >
             <div className='flex items-center gap-2'>
-              {getIcon(modelName.split('.')[1] || '', modelName, modelName)}
+              {getIcon(modelName.split('.')[1] || '', modelName)}
               <p>{modelName}</p>
             </div>
 

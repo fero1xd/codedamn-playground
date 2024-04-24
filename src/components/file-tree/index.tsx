@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Children } from './children';
 import { useQueryClient } from '@tanstack/react-query';
 import { useWSQuery } from '@/hooks/use-ws-query';
+import { Spinner } from '../ui/loading';
 
 const addDepth = (children: Child[], currentDepth: number) => {
   children.forEach((i) => {
@@ -23,7 +24,11 @@ export function FileTree({
 }) {
   const [selectedDir, setSelectedDir] = useState<Child | undefined>(undefined);
 
-  const { data: treeRoot, isLoading } = useWSQuery(
+  const {
+    data: treeRoot,
+    isLoading,
+    isError,
+  } = useWSQuery(
     ['GENERATE_TREE'],
     // A sub tree would be fresh for 2 minutes so react query will not refetch again and again on selection of same folders
     120 * 1000
@@ -40,8 +45,14 @@ export function FileTree({
     }
   }, [treeRoot, queryClient]);
 
+  console.log(isError);
+
   if (isLoading) {
-    return null;
+    return (
+      <div className='h-full flex items-center justify-center'>
+        <Spinner />
+      </div>
+    );
   }
 
   if (!treeRoot) {

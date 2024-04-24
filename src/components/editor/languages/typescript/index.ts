@@ -2,7 +2,7 @@ import { Monaco } from '@monaco-editor/react';
 import { Editor } from '../../types';
 import { configureFormatting } from './format';
 
-export function configureTs(e: Editor, m: Monaco) {
+export function configureTs(_e: Editor, m: Monaco) {
   configureFormatting(m);
 
   m.languages.typescript.typescriptDefaults.setEagerModelSync(true);

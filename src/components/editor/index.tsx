@@ -15,15 +15,10 @@ import { configureMd } from './languages/md';
 import { setupKeybindings } from './keybindings';
 import { configureTs } from './languages/typescript';
 import { configureJs } from './languages/javascript';
-import {
-  Editor as EditorType,
-  loadTypes,
-  TextModel,
-  typesService,
-} from './types';
+import { Editor as EditorType, TextModel } from './types';
 import { EditorState } from './utils/editor-state';
-import { useDebouncedCallback } from 'use-debounce';
 import { Tabs } from './tabs';
+import { Spinner } from '../ui/loading';
 
 const editorStates = new EditorState();
 
@@ -149,45 +144,45 @@ export function Editor({ selectedFile }: EditorProps) {
     console.log('active model uri change ', activeModelUri?.toString());
   }, [activeModelUri]);
 
-  const resolveDeps = useDebouncedCallback(async (deps: Dependencies) => {
-    const allDeps = [
-      ...Object.keys(deps.dependencies),
-      ...Object.keys(deps.devDependencies),
-    ];
+  // const resolveDeps = useDebouncedCallback(async (deps: Dependencies) => {
+  //   const allDeps = [
+  //     ...Object.keys(deps.dependencies),
+  //     ...Object.keys(deps.devDependencies),
+  //   ];
 
-    // const imports = getImports(e);
+  //   // const imports = getImports(e);
 
-    // console.log('imports');
-    // console.log(imports);
+  //   // console.log('imports');
+  //   // console.log(imports);
 
-    const typesToGet = allDeps.reduce(
-      (acc, lib) => {
-        acc[lib] = '';
+  //   const typesToGet = allDeps.reduce(
+  //     (acc, lib) => {
+  //       acc[lib] = '';
 
-        return acc;
-      },
-      {} as Record<string, string>
-    );
+  //       return acc;
+  //     },
+  //     {} as Record<string, string>
+  //   );
 
-    const fetchedTypes = await typesService.getTypeUrls(
-      Object.keys(typesToGet).filter((c) => typesToGet[c] === '')
-    );
+  //   const fetchedTypes = await typesService.getTypeUrls(
+  //     Object.keys(typesToGet).filter((c) => typesToGet[c] === '')
+  //   );
 
-    const newLibs = await loadTypes(fetchedTypes);
+  //   const newLibs = await loadTypes(fetchedTypes);
 
-    for (const lib of newLibs) {
-      console.log(lib.filename);
-      monacoInstance?.languages.typescript.typescriptDefaults.addExtraLib(
-        lib.content,
-        lib.filename
-      );
-    }
-  }, 1000);
+  //   for (const lib of newLibs) {
+  //     console.log(lib.filename);
+  //     monacoInstance?.languages.typescript.typescriptDefaults.addExtraLib(
+  //       lib.content,
+  //       lib.filename
+  //     );
+  //   }
+  // }, 1000);
 
   if (!themeLoaded) {
     return (
       <div className='h-full w-full flex items-center justify-center'>
-        Loading...
+        <Spinner />
       </div>
     );
   }
@@ -209,7 +204,7 @@ export function Editor({ selectedFile }: EditorProps) {
 
           editorRef.current?.setModel(m);
         }}
-        closeModel={(m, index) => {
+        closeModel={(m) => {
           if (!editorRef.current) return;
 
           console.log('setting view state before closing model');
@@ -223,6 +218,7 @@ export function Editor({ selectedFile }: EditorProps) {
         }}
       />
       <MonacoEditor
+        loading={<Spinner />}
         height='100%'
         options={{
           minimap: {
@@ -234,6 +230,7 @@ export function Editor({ selectedFile }: EditorProps) {
           padding: {
             top: 10,
           },
+          fontFamily: 'Cascadia Code',
         }}
         theme='uitheme'
         onMount={onMount}

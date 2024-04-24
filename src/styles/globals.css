@@ -7,8 +7,8 @@
 @tailwind utilities;
 
 @font-face {
-  font-family: Consolas;
-  src: url(../public/Consolas.ttf);
+  font-family: 'Cascadia Code';
+  src: url(/CascadiaCode.ttf);
 }
 
 @layer base {
@@ -109,8 +109,13 @@
   color: #f08c36;
 }
 
-.file__tree {
+.file__tree,
+.editor__tabs {
   font-family: Figtree;
   font-optical-sizing: auto;
   font-style: normal;
+}
+
+.loading__panel {
+  background-color: rgba(0, 0, 0, 0.8);
 }
