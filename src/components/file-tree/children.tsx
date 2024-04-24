@@ -4,79 +4,81 @@ import { cn } from '@/lib/utils';
 import { useMemo, useState } from 'react';
 import { useWSQuery } from '@/hooks/use-ws-query';
 
+type ChildrenProps = {
+  node: Node;
+  selectedDir: Child | undefined;
+  selectedFile: Child | undefined;
+  onSelect: (node: Child) => void;
+};
+
 export function Children({
   node,
   onSelect,
   selectedDir,
-}: {
-  node: Node;
-  selectedDir?: Child;
-  onSelect: (node: Child) => void;
-}) {
+  selectedFile,
+}: ChildrenProps) {
   return node.children.map((c) => (
     <Item
       key={c.path + '/' + c.name}
-      c={c}
+      node={c}
       selectedDir={selectedDir}
       onSelect={onSelect}
+      selectedFile={selectedFile}
     />
   ));
 }
 
-function Item({
-  c,
-  selectedDir,
-  onSelect,
-}: {
-  c: Child;
-  selectedDir?: Child;
-  onSelect: (node: Child) => void;
-}) {
+type ItemProps = ChildrenProps & {
+  node: Child;
+};
+
+function Item({ node, selectedDir, onSelect, selectedFile }: ItemProps) {
   const [open, setOpen] = useState(false);
+  const path = node.path;
+  const isSelected = selectedFile
+    ? selectedFile.path === path
+    : selectedDir?.path === path;
 
   return (
     <>
       <div
-        key={c.path}
+        key={node.path}
         onClick={() => {
-          if (c.isDir) {
+          if (node.isDir) {
             setOpen((o) => !o);
           }
-          onSelect(c);
+          onSelect(node);
         }}
         className={cn(
-          `flex items-center`,
-          `${selectedDir && selectedDir.path === c.path ? 'bg-[#242424]' : 'bg-transparent'} hover:cursor-pointer hover:bg-[#0f111a]`
+          `flex items-center transition-all ease-out`,
+          `${isSelected ? 'bg-[#020509]' : 'bg-transparent'} hover:cursor-pointer hover:bg-[#020509]`
         )}
-        style={{ paddingLeft: `${c.depth * 16}px` }}
+        style={{ paddingLeft: `${node.depth * 16}px` }}
       >
         <span className='flex w-[32px] h-[32px] items-center justify-center'>
           {getIcon(
-            c.name.split('.').pop() || '',
-            c.isDir ? 'closedDirectory' : '',
-            c.name
+            node.name.split('.').pop() || '',
+            node.isDir ? 'closedDirectory' : '',
+            node.name
           )}
         </span>
 
-        <span style={{ marginLeft: 1, marginBottom: 3 }}>{c.name}</span>
+        <span style={{ marginLeft: 1, marginBottom: 3 }}>{node.name}</span>
       </div>
 
-      {open && c.isDir && (
-        <Nested node={c} onSelect={onSelect} selectedDir={selectedDir} />
+      {open && node.isDir && (
+        <Nested
+          node={node}
+          onSelect={onSelect}
+          selectedDir={selectedDir}
+          selectedFile={selectedFile}
+        />
       )}
     </>
   );
 }
 
-function Nested({
-  node: dir,
-  onSelect,
-  selectedDir,
-}: {
-  node: Child;
-  onSelect: (node: Child) => void;
-  selectedDir?: Child;
-}) {
+function Nested({ node: dir, onSelect, selectedDir, selectedFile }: ItemProps) {
   const { data, isLoading } = useWSQuery(
     ['GENERATE_TREE', dir.path],
     120 * 1000
@@ -93,7 +95,7 @@ function Nested({
 
       return cloned;
     }
-  }, [data, dir.depth]);
+  }, [data, dir]);
 
   if (isLoading) {
     // Maybe query is still loading..
@@ -110,6 +112,7 @@ function Nested({
       node={useFullData}
       onSelect={onSelect}
       selectedDir={selectedDir}
+      selectedFile={selectedFile}
     />
   );
 }

@@ -19,50 +19,46 @@ export function Tabs({
 }: TabsProps) {
   return (
     <div className='w-full flex items-center border-b border-b-gray-800'>
-      {openedModels &&
-        openedModels.map((model, i) => {
-          const uriString = model.uri.toString();
-          const split = uriString.split('/');
-          const modelName = split[split.length - 1];
+      {(openedModels || []).map((model, i) => {
+        const uriString = model.uri.toString();
+        const split = uriString.split('/');
+        const modelName = split[split.length - 1];
 
-          const selected = activeModelUri?.toString() === uriString;
+        const selected = activeModelUri?.toString() === uriString;
 
-          console.log(selected);
+        return (
+          <div
+            key={model.uri.toString()}
+            className={cn(
+              'pr-10 pl-3 py-3 bg-transparent relative group text-sm text-gray-500 flex items-center border-t gap-3 border-b',
+              selected &&
+                'text-white bg-[#0f111a] border-b-transparent border-t-blue-500',
+              'border-r border-r-gray-800'
+            )}
+            onClick={() => {
+              if (!selected) onChangeModel(model);
+            }}
+          >
+            <div className='flex items-center gap-2'>
+              {getIcon(modelName.split('.')[1] || '', modelName, modelName)}
+              <p>{modelName}</p>
+            </div>
 
-          return (
-            <div
-              key={model.uri.toString()}
+            <span
               className={cn(
-                'pr-10 pl-3 relative py-3 bg-transparent text-sm text-gray-500 flex items-center border-t gap-3 group border-b',
-                selected &&
-                  'text-white bg-[#0f111a] border-t-blue-500 border-b-transparent mb-[-2px] mt-[-2px]',
-                'border-r border-r-gray-800'
+                !selected && 'opacity-0',
+                'group-hover:opacity-100 cursor-pointer absolute right-3'
               )}
-              onClick={() => {
-                if (!selected) onChangeModel(model);
+              onClick={(e) => {
+                e.stopPropagation();
+                closeModel(model, i);
               }}
             >
-              <div className='flex items-center gap-2'>
-                {getIcon(modelName.split('.')[1] || '', modelName, modelName)}
-                <p>{modelName}</p>
-                {selected && <span>selected</span>}
-              </div>
-
-              <span
-                className={cn(
-                  !selected && 'opacity-0',
-                  'group-hover:opacity-100 cursor-pointer absolute right-3'
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeModel(model, i);
-                }}
-              >
-                <Cross />
-              </span>
-            </div>
-          );
-        })}
+              <Cross />
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
