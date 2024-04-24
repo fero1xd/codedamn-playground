@@ -1,4 +1,4 @@
-import { IPty, spawn } from 'node-pty';
+import { type IPty, spawn } from 'node-pty';
 import { createDirIfNotExists } from './fs';
 import { env } from './env';
 
@@ -16,7 +16,12 @@ export class TerminalManager {
       cols: 100,
       name: 'xterm',
       cwd: env.WORK_DIR,
+      env: {
+        TERM: 'xterm-256color',
+      },
     });
+
+    //    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
 
     term.onData(onData);
 
@@ -38,7 +43,7 @@ export class TerminalManager {
   }
 
   clear(terminalId: string) {
-    this.sessions[terminalId].kill();
+    this.sessions[terminalId]?.kill();
     delete this.sessions[terminalId];
   }
 }

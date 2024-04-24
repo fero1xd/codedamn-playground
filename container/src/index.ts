@@ -39,8 +39,8 @@ const main = () => {
         {
           serverEvent: OutgoingMessageType.INSTALL_DEPS,
           data: {
-            dependencies: json.dependencies || undefined,
-            devDependencies: json.devDependencies || undefined,
+            dependencies: json.dependencies || {},
+            devDependencies: json.devDependencies || {},
           },
         },
         ws
@@ -102,8 +102,6 @@ const main = () => {
   wss.on('listening', () => {
     console.log('Container listening on port 3000');
   });
-
-  console.log('here');
 };
 
 main();

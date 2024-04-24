@@ -1,15 +1,7 @@
-# container
+# Available templates for now
 
-To install dependencies:
+React Typescript
+Bun Typescript
+Plain Node JS
 
-```bash
-bun install
-```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.0.11. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+- Work directory will be /home/bun/app

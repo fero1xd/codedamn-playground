@@ -2,12 +2,13 @@
   "name": "container",
   "module": "index.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
     "dev": "tsc -w",
     "start": "tsc && node dist/index.js",
     "start:dev": "tsx watch src/index.ts"
   },
   "devDependencies": {
+    "@types/dts-bundle": "^0.0.35",
     "@types/uuid": "^9.0.8",
     "@types/ws": "^8.5.10",
     "bun-types": "latest",
@@ -17,7 +18,9 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "dts-bundle": "^0.7.3",
     "node-pty": "^1.0.0",
+    "tsup": "^8.0.2",
     "uuid": "^9.0.1",
     "ws": "^8.16.0",
     "zod": "^3.22.4"

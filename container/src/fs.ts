@@ -1,25 +1,29 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { Root } from './types';
+import type { Dependencies, Root } from './types';
 import { env } from './env';
 import { watchFile } from 'fs';
 
 export const watchForDepsChange = (
   path: string,
-  cb: (deps: {
-    dependencies: Record<string, string>;
-    devDependencies: Record<string, string>;
-  }) => void
+  cb: (deps: Dependencies) => void
 ) => {
   watchFile(path, async () => {
-    const file = await fs.readFile(path, { encoding: 'utf-8' });
-    const json = JSON.parse(file);
+    try {
+      const file = await fs.readFile(path, { encoding: 'utf-8' });
+      const json = JSON.parse(file);
 
-    cb({
-      dependencies: json.dependencies || undefined,
-      devDependencies: json.devDependencies || undefined,
-    });
+      cb({
+        dependencies: json.dependencies || {},
+        devDependencies: json.devDependencies || {},
+      });
+    } catch (e) {
+      console.log('IO error watching file');
+      console.log(e);
+    }
   });
+
+  console.log('watching file');
 };
 
 export const generateFileTree = async (dirName: string) => {
@@ -77,3 +81,12 @@ export const createDirIfNotExists = async (dirPath: string) => {
     await fs.mkdir(env.WORK_DIR, { recursive: true });
   }
 };
+
+export async function exists(f: string) {
+  try {
+    await fs.stat(f);
+    return true;
+  } catch {
+    return false;
+  }
+}

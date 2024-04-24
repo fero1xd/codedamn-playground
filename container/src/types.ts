@@ -30,3 +30,14 @@ export type ResponseType = {
   serverEvent?: OutgoingMessageType;
   data: unknown;
 };
+
+export type Dependencies = {
+  dependencies: Record<string, string>;
+  devDependencies: Record<string, string>;
+};
+
+export type PackageJSON = Dependencies & {
+  // Types and typings are synonymous to each other
+  typings?: string;
+  types?: string;
+};

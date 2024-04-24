@@ -27,7 +27,11 @@ import { Tabs } from './tabs';
 
 const editorStates = new EditorState();
 
-export function Editor({ selectedFile }: { selectedFile: Child | undefined }) {
+type EditorProps = {
+  selectedFile: Child | undefined;
+};
+
+export function Editor({ selectedFile }: EditorProps) {
   const { themeLoaded } = useMaterial();
 
   const monacoInstance = useMonaco() as Monaco | null;
