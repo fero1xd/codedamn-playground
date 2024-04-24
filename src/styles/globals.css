@@ -1,15 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
 /* @import url('https://fonts.cdnfonts.com/css/cascadia-code'); */
 @import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
+@import url('https://codedamn-web.s3.ap-south-1.amazonaws.com/CascadiaCode.ttf');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
+/* @font-face {
   font-family: 'Cascadia Code';
   src: url(/CascadiaCode.ttf);
-}
+} */
 
 @layer base {
   :root {
