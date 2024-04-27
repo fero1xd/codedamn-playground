@@ -44,23 +44,24 @@ export const bundleTypeDefs = async (deps: Dependencies) => {
 
         const version = deps.dependencies[dep] || deps.devDependencies[dep];
 
-        const cachedTypes = (await redis.get(`__types__${dep}__${version}`)) as
-          | string
-          | null;
+        // const cachedTypes = (await redis.get(`__types__${dep}__${version}`)) as
+        //   | string
+        //   | null;
 
-        if (cachedTypes) {
-          console.log(`${dep}@${version} is in cache`);
-          typesDefs[dep] = cachedTypes;
-          continue;
-        }
+        // if (cachedTypes) {
+        //   console.log(`${dep}@${version} is in cache`);
+        //   typesDefs[dep] = cachedTypes;
+        //   continue;
+        // }
 
         const typesPath = `/tmp/types/${dep}/${version}/index.d.ts`;
         dts.bundle({
           main: entryPoint,
           out: typesPath,
           name: dep.startsWith("@types/") ? dep.replace("@types/", "") : dep,
-          externals: true,
           verbose: true,
+          referenceExternals: true,
+          externals: true,
         });
 
         // TODO: Make this in memory later
@@ -80,10 +81,3 @@ export const bundleTypeDefs = async (deps: Dependencies) => {
   }
   return typesDefs;
 };
-
-bundleTypeDefs({
-  dependencies: {
-    "@types/express": "4.0.0",
-  },
-  devDependencies: {},
-});

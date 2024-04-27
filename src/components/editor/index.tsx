@@ -175,6 +175,11 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
 
     // Start with a fresh slate
     m.editor.getModels().forEach((m) => m.dispose());
+
+    m.languages.typescript.typescriptDefaults.addExtraLib(
+      "declare module 'twice' { export type Foo = string; }",
+      `file:///index.d.ts`
+    );
   };
 
   // const resolveDeps = useDebouncedCallback(async () => {

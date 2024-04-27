@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useTerminal } from "./hooks/use-terminal";
 import { TerminalX } from "./components/terminal";
 import { Toaster } from "./components/ui/toaster";
+import { Browser } from "./components/browser";
 
 export function App() {
   useDarkMode();
@@ -37,7 +38,7 @@ export function App() {
             fitTerm={fitTerm}
           />
         }
-        preview={<></>}
+        preview={<Browser containerUrl="https://youtube.com" />}
         onLayout={fitTerm}
       />
     </>

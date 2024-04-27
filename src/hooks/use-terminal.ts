@@ -30,7 +30,7 @@ export function useTerminal() {
 
   const setDimensionsDebounce = useDebouncedCallback((value: Dimensions) => {
     _setDimensions(value);
-  }, 1000);
+  }, 500);
 
   const fitTerm = () => {
     fitAddon.fit();
