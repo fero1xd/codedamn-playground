@@ -39,7 +39,7 @@ export const bundleTypeDefs = async (deps: Dependencies) => {
           (packageJson.typings || packageJson.types) as string
         );
 
-        console.log(`found entry point ${entryPoint}`);
+        console.log(`found entry point for ${dep}`);
 
         const version = deps.dependencies[dep] || deps.devDependencies[dep];
 
@@ -55,9 +55,9 @@ export const bundleTypeDefs = async (deps: Dependencies) => {
 
         const typesPath = `/tmp/types/${dep}/${version}/index.d.ts`;
         dts.bundle({
-          name: `${dep}__types__`,
           main: entryPoint,
           out: typesPath,
+          name: dep.startsWith("@types/") ? dep.replace("@types/", "") : dep,
         });
 
         // TODO: Make this in memory later

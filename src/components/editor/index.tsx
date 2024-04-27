@@ -14,11 +14,17 @@ import { configureMd } from "./languages/md";
 import { setupKeybindings } from "./keybindings";
 import { configureTs } from "./languages/typescript";
 import { configureJs } from "./languages/javascript";
-import { Editor as EditorType, TextModel } from "./types";
+import {
+  Editor as EditorType,
+  loadTypes,
+  TextModel,
+  typesService,
+} from "./types";
 import { EditorState } from "./utils/editor-state";
 import { Tabs } from "./tabs";
 import { Spinner } from "../ui/loading";
 import { safeName } from "./utils/imports";
+import { useDebouncedCallback } from "use-debounce";
 
 const editorStates = new EditorState();
 
@@ -95,13 +101,16 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
       "INSTALL_DEPS",
       (data) => {
         console.log("NEW TYPE DEFS");
-        console.log(data);
+
+        console.log("monaco instance", !!monacoInstance);
 
         for (const dep of Object.keys(data)) {
-          console.log(dep);
+          const pat = `file:///node_modules/${dep === "@types/uuid" ? "uuid" : safeName(dep)}/index.d.ts`;
+          console.log(dep, pat);
+
           monacoInstance?.languages.typescript.typescriptDefaults.addExtraLib(
             data[dep],
-            `file:///node_modules/${safeName(dep)}/index.d.ts`
+            pat
           );
         }
       }
@@ -110,7 +119,7 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
     return () => {
       removeSub();
     };
-  }, [conn]);
+  }, [conn, monacoInstance]);
 
   useEffect(() => {
     if (!editorRef.current || !monacoInstance || !selectedFile) return;
@@ -154,11 +163,8 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
     m.editor.getModels().forEach((m) => m.dispose());
   };
 
-  // const resolveDeps = useDebouncedCallback(async (deps: Dependencies) => {
-  //   const allDeps = [
-  //     ...Object.keys(deps.dependencies),
-  //     ...Object.keys(deps.devDependencies),
-  //   ];
+  // const resolveDeps = useDebouncedCallback(async () => {
+  //   const allDeps = ["uuid"];
 
   //   // const imports = getImports(e);
 
@@ -167,7 +173,7 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
 
   //   const typesToGet = allDeps.reduce(
   //     (acc, lib) => {
-  //       acc[lib] = '';
+  //       acc[lib] = "";
 
   //       return acc;
   //     },
@@ -175,18 +181,21 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
   //   );
 
   //   const fetchedTypes = await typesService.getTypeUrls(
-  //     Object.keys(typesToGet).filter((c) => typesToGet[c] === '')
+  //     Object.keys(typesToGet).filter((c) => typesToGet[c] === "")
   //   );
 
   //   const newLibs = await loadTypes(fetchedTypes);
 
-  //   for (const lib of newLibs) {
-  //     console.log(lib.filename);
-  //     monacoInstance?.languages.typescript.typescriptDefaults.addExtraLib(
-  //       lib.content,
-  //       lib.filename
-  //     );
-  //   }
+  //   console.log("working defs");
+  //   console.log(newLibs);
+
+  //   // for (const lib of newLibs) {
+  //   //   console.log(lib.filename);
+  //   //   monacoInstance?.languages.typescript.typescriptDefaults.addExtraLib(
+  //   //     lib.content,
+  //   //     lib.filename
+  //   //   );
+  //   // }
   // }, 1000);
 
   if (!themeLoaded) {

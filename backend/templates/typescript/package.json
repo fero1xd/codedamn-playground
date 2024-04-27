@@ -1,7 +1,7 @@
 {
-  "name": "node",
-  "version": "0.0.0",
-  "description": "",
+  "name": "nodeja",
+  "version": "1.1.0",
+  "description": "aaa",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
