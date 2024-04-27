@@ -7,6 +7,7 @@ import {
   generateFileTree,
   getFileContent,
   readAndBundleTypes,
+  saveFile,
   watchForDepsChange,
 } from "./fs";
 import { TerminalManager } from "./sessions";
@@ -88,6 +89,13 @@ const main = () => {
       }
 
       switch (message?.event) {
+        case IncomingMessage.SAVE_CHANGES:
+          await saveFile(message.data.filePath, message.data.newContent);
+          sendResponse(
+            { serverEvent: OutgoingMessageType.FILE_SAVED, data: "File saved" },
+            ws
+          );
+          break;
         case IncomingMessage.GENERATE_TREE:
           sendResponse(
             {

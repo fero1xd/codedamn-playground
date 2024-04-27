@@ -49,7 +49,6 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
         };
 
         if (reply.serverEvent) {
-          console.log(reply.serverEvent);
           for (const cb of subscriptions.current.get(reply.serverEvent) || []) {
             cb[1](reply.data);
           }

@@ -1,4 +1,4 @@
-import fs from "fs/promises";
+import fs, { writeFile } from "fs/promises";
 import path from "path";
 import type { Dependencies, Root } from "./types";
 import { env } from "./env";
@@ -120,4 +120,20 @@ export const getWorkDir = async () => {
 
   await createDirIfNotExists(p);
   return p;
+};
+
+// Sanitize path here dont let users write anywhere in the container
+export const saveFile = async (path: string, contents: string) => {
+  if (!(await exists(path))) {
+    return;
+  }
+
+  await writeFile(path, contents, { encoding: "utf-8" });
+
+  if (lruCache.has(path)) {
+    const contents = lruCache.get(path)!;
+
+    lruCache.delete(path);
+    lruCache.set(path, contents);
+  }
 };

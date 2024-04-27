@@ -5,6 +5,7 @@ import { FileTree } from "./components/file-tree";
 import { useState } from "react";
 import { useTerminal } from "./hooks/use-terminal";
 import { TerminalX } from "./components/terminal";
+import { Toaster } from "./components/ui/toaster";
 
 export function App() {
   useDarkMode();
@@ -15,6 +16,7 @@ export function App() {
   return (
     <>
       {/* <Loa>dingPanel /> */}
+      <Toaster />
       <Layout
         editor={
           <Editor

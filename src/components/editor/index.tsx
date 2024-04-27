@@ -14,17 +14,13 @@ import { configureMd } from "./languages/md";
 import { setupKeybindings } from "./keybindings";
 import { configureTs } from "./languages/typescript";
 import { configureJs } from "./languages/javascript";
-import {
-  Editor as EditorType,
-  loadTypes,
-  TextModel,
-  typesService,
-} from "./types";
+import { Editor as EditorType, TextModel } from "./types";
 import { EditorState } from "./utils/editor-state";
 import { Tabs } from "./tabs";
 import { Spinner } from "../ui/loading";
 import { safeName } from "./utils/imports";
 import { useDebouncedCallback } from "use-debounce";
+import { useToast } from "../ui/use-toast";
 
 const editorStates = new EditorState();
 
@@ -41,6 +37,7 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
   const editorRef = useRef<EditorType>();
 
   const conn = useConnection();
+  const { toast } = useToast();
 
   const openFile = useCallback(
     async (editor: EditorType, m: Monaco, fileUri: string) => {
@@ -95,6 +92,23 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
   useEffect(() => {
     if (!conn) return;
 
+    console.log("adding save file listener");
+    const removeListener = conn.addSubscription("FILE_SAVED", (msg: string) => {
+      console.log("server event file saved: " + msg);
+      toast({
+        title: "File Saved",
+        description: "Your changes are successfuly saved",
+      });
+    });
+
+    return () => {
+      removeListener();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!conn) return;
+
     console.log("yo from editor");
 
     const removeSub = conn.addSubscription<Record<string, string>>(
@@ -105,7 +119,7 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
         console.log("monaco instance", !!monacoInstance);
 
         for (const dep of Object.keys(data)) {
-          const pat = `file:///node_modules/${dep === "@types/uuid" ? "uuid" : safeName(dep)}/index.d.ts`;
+          const pat = `file:///node_modules/${dep.startsWith("@types/") ? dep.replace("@types/", "") : safeName(dep)}/index.d.ts`;
           console.log(dep, pat);
 
           monacoInstance?.languages.typescript.typescriptDefaults.addExtraLib(
@@ -119,7 +133,7 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
     return () => {
       removeSub();
     };
-  }, [conn, monacoInstance]);
+  }, [monacoInstance]);
 
   useEffect(() => {
     if (!editorRef.current || !monacoInstance || !selectedFile) return;
@@ -198,6 +212,22 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
   //   // }
   // }, 1000);
 
+  const saveChanges = useDebouncedCallback(
+    async (filePath: string, contents: string) => {
+      if (!conn || conn.ws?.readyState !== 1) return;
+
+      conn.sendJsonMessage({
+        nonce: "__ignored__",
+        event: "SAVE_CHANGES",
+        data: {
+          filePath,
+          newContent: contents,
+        },
+      });
+    },
+    5000
+  );
+
   if (!themeLoaded) {
     return (
       <div className="h-full w-full flex items-center justify-center">
@@ -265,6 +295,15 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
           fontFamily: "Cascadia Code",
         }}
         theme="uitheme"
+        onChange={(contents) => {
+          if (!contents) return;
+
+          // Or use "selectedFile" here
+          const currentModel = editorRef.current?.getModel();
+          if (!currentModel) return;
+
+          saveChanges(currentModel.uri.path, contents);
+        }}
         onMount={onMount}
       />
     </>

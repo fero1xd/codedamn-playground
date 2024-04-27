@@ -1,13 +1,18 @@
-import { getDB } from './config';
+import { getDB } from "./config";
+
+import express from "express";
 
 const main = () => {
-  const db = getDB();
+	const app = express();
 
-  const admin = db.getAdmin();
-
-  console.log(
-    `Admin's name is ${admin.user} and his password is ${admin.password}`
-  );
+	app.get("/", (req, res) => {
+		return res.json({
+			name: "Hello",
+		});
+	});
+	app.listen(42049, () => {
+		console.log("Server listening on port 42049");
+	});
 };
 
 main();

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Dependencies, PackageJSON } from "../types";
 import path from "path";
 import { exists, getWorkDir } from "../fs";
@@ -58,6 +59,8 @@ export const bundleTypeDefs = async (deps: Dependencies) => {
           main: entryPoint,
           out: typesPath,
           name: dep.startsWith("@types/") ? dep.replace("@types/", "") : dep,
+          externals: true,
+          verbose: true,
         });
 
         // TODO: Make this in memory later
@@ -77,3 +80,10 @@ export const bundleTypeDefs = async (deps: Dependencies) => {
   }
   return typesDefs;
 };
+
+bundleTypeDefs({
+  dependencies: {
+    "@types/express": "4.0.0",
+  },
+  devDependencies: {},
+});

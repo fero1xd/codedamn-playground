@@ -1,11 +1,11 @@
-import { z } from 'zod';
-import { IncomingMessage } from './types';
+import { z } from "zod";
+import { IncomingMessage } from "./types";
 
 const baseMessage = z.object({
   nonce: z.string(),
 });
 
-export const incomingMessage = z.discriminatedUnion('event', [
+export const incomingMessage = z.discriminatedUnion("event", [
   baseMessage.extend({
     event: z.literal(IncomingMessage.GENERATE_TREE),
     data: z.object({ path: z.string().optional() }).optional(),
@@ -16,7 +16,7 @@ export const incomingMessage = z.discriminatedUnion('event', [
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.SAVE_CHANGES),
-    data: z.object({ filePath: z.string(), changes: z.string() }),
+    data: z.object({ filePath: z.string(), newContent: z.string() }),
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.TERMINAL_SESSION_START),
