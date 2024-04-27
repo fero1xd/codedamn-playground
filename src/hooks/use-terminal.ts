@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
-import { FitAddon } from '@xterm/addon-fit';
-import { Dimensions } from '../lib/types';
-import { Terminal } from '@xterm/xterm';
-import { useDebouncedCallback } from 'use-debounce';
+import { useMemo, useState } from "react";
+import { FitAddon } from "@xterm/addon-fit";
+import { Dimensions } from "../lib/types";
+import { Terminal } from "@xterm/xterm";
+import { useDebouncedCallback } from "use-debounce";
 
 export function useTerminal() {
   const fitAddon = useMemo(() => new FitAddon(), []);
@@ -10,16 +10,16 @@ export function useTerminal() {
   const terminal = useMemo(() => {
     const t = new Terminal({
       theme: {
-        background: '#04090f',
+        background: "#04090f",
       },
       cursorBlink: true,
       scrollOnUserInput: true,
-      fontFamily: 'JetBrains Mono, monospace',
+      fontFamily: "JetBrains Mono, monospace",
       fontSize: 14,
-      cursorStyle: 'bar',
+      cursorStyle: "bar",
     });
 
-    console.log('loading up fit addon');
+    console.log("loading up fit addon");
     t.loadAddon(fitAddon);
 
     return t;
@@ -36,7 +36,6 @@ export function useTerminal() {
     fitAddon.fit();
 
     const { rows, cols } = terminal;
-    console.log(terminal.rows, terminal.cols);
     setDimensionsDebounce({ rows, cols });
   };
 

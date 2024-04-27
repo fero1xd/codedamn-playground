@@ -2,78 +2,79 @@ import {
   Monaco,
   Editor as MonacoEditor,
   useMonaco,
-} from '@monaco-editor/react';
-import * as monaco from 'monaco-editor';
-import { useMaterial } from './use-material';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Child, Dependencies } from '@/queries/types';
-import { useConnection } from '@/hooks/use-connection';
-import { configureHtml } from './languages/html';
-import { configureCss } from './languages/css';
-import { configureJson } from './languages/json';
-import { configureMd } from './languages/md';
-import { setupKeybindings } from './keybindings';
-import { configureTs } from './languages/typescript';
-import { configureJs } from './languages/javascript';
-import { Editor as EditorType, TextModel } from './types';
-import { EditorState } from './utils/editor-state';
-import { Tabs } from './tabs';
-import { Spinner } from '../ui/loading';
+} from "@monaco-editor/react";
+import * as monaco from "monaco-editor";
+import { useMaterial } from "./use-material";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useConnection } from "@/hooks/use-connection";
+import { configureHtml } from "./languages/html";
+import { configureCss } from "./languages/css";
+import { configureJson } from "./languages/json";
+import { configureMd } from "./languages/md";
+import { setupKeybindings } from "./keybindings";
+import { configureTs } from "./languages/typescript";
+import { configureJs } from "./languages/javascript";
+import { Editor as EditorType, TextModel } from "./types";
+import { EditorState } from "./utils/editor-state";
+import { Tabs } from "./tabs";
+import { Spinner } from "../ui/loading";
+import { safeName } from "./utils/imports";
 
 const editorStates = new EditorState();
 
 type EditorProps = {
-  selectedFile: Child | undefined;
+  selectedFile: string | undefined;
+  setSelectedFile: (f: string | undefined) => void;
 };
 
-export function Editor({ selectedFile }: EditorProps) {
+export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
   const { themeLoaded } = useMaterial();
 
   const monacoInstance = useMonaco() as Monaco | null;
   const [openedModels, setOpenedModels] = useState<TextModel[]>([]);
-  const [activeModelUri, setActiveModelUri] = useState<monaco.Uri>();
   const editorRef = useRef<EditorType>();
 
   const conn = useConnection();
 
   const openFile = useCallback(
-    async (editor: EditorType, m: Monaco, file: Child) => {
-      if (!file || !conn) return;
+    async (editor: EditorType, m: Monaco, fileUri: string) => {
+      if (!conn) return;
 
       const currentModel = editor.getModel();
 
-      if (
-        currentModel &&
-        currentModel.uri !== monaco.Uri.parse(`file:///${file.name}`)
-      ) {
-        console.log('setting view state');
+      if (currentModel && currentModel.uri.toString() !== fileUri) {
+        console.log("setting view state");
         editorStates.set(currentModel, editor);
       }
 
-      const existingModel = m.editor.getModel(
-        monaco.Uri.parse(`file:///${file.name}`)
-      );
+      const existingModel = m.editor.getModel(monaco.Uri.parse(fileUri));
 
       if (existingModel) {
-        console.log('existing model');
+        console.log("existing model");
         // @ts-expect-error broken types
         editor.setModel(existingModel);
 
-        if (openedModels.find((opened) => opened.uri === existingModel.uri)) {
+        if (
+          openedModels.find(
+            (opened) => opened.uri.toString() === existingModel.uri.toString()
+          )
+        ) {
           return;
         }
 
+        console.log(openedModels);
+
         setOpenedModels((prev) => [...prev, existingModel as TextModel]);
       } else {
-        console.log('creating model');
-        const contents = await conn.fetchCall<string>('FILE_CONTENT', {
-          filePath: file.path,
+        console.log("creating model", fileUri);
+        const contents = await conn.fetchCall<string>("FILE_CONTENT", {
+          filePath: fileUri.replace("file://", ""),
         });
 
         const createdModel = m.editor.createModel(
           contents,
           undefined,
-          monaco.Uri.parse(`file:///${file.name}`)
+          monaco.Uri.parse(fileUri)
         );
 
         // @ts-expect-error Broken types
@@ -82,17 +83,27 @@ export function Editor({ selectedFile }: EditorProps) {
         setOpenedModels((prev) => [...prev, createdModel as TextModel]);
       }
     },
-    [conn]
+    [conn, openedModels]
   );
 
   useEffect(() => {
     if (!conn) return;
 
-    const removeSub = conn.addSubscription<Dependencies>(
-      'INSTALL_DEPS',
+    console.log("yo from editor");
+
+    const removeSub = conn.addSubscription<Record<string, string>>(
+      "INSTALL_DEPS",
       (data) => {
-        console.log('CHANGE IN DEPS');
+        console.log("NEW TYPE DEFS");
         console.log(data);
+
+        for (const dep of Object.keys(data)) {
+          console.log(dep);
+          monacoInstance?.languages.typescript.typescriptDefaults.addExtraLib(
+            data[dep],
+            `file:///node_modules/${safeName(dep)}/index.d.ts`
+          );
+        }
       }
     );
 
@@ -111,7 +122,10 @@ export function Editor({ selectedFile }: EditorProps) {
     editorRef.current = e;
 
     e.onDidChangeModel((event) => {
-      setActiveModelUri((event.newModelUrl as monaco.Uri) || undefined);
+      setSelectedFile(
+        event.newModelUrl ? event.newModelUrl.toString() : undefined
+      );
+
       // Restore model view state if exists
       if (!event.newModelUrl) return;
 
@@ -119,7 +133,7 @@ export function Editor({ selectedFile }: EditorProps) {
       if (newModel) {
         const editorState = editorStates.get(newModel as TextModel);
         if (editorState) {
-          console.log('restoring view state');
+          console.log("restoring view state");
           e.restoreViewState(editorState);
           e.focus();
         }
@@ -139,10 +153,6 @@ export function Editor({ selectedFile }: EditorProps) {
     // Start with a fresh slate
     m.editor.getModels().forEach((m) => m.dispose());
   };
-
-  useEffect(() => {
-    console.log('active model uri change ', activeModelUri?.toString());
-  }, [activeModelUri]);
 
   // const resolveDeps = useDebouncedCallback(async (deps: Dependencies) => {
   //   const allDeps = [
@@ -181,7 +191,7 @@ export function Editor({ selectedFile }: EditorProps) {
 
   if (!themeLoaded) {
     return (
-      <div className='h-full w-full flex items-center justify-center'>
+      <div className="h-full w-full flex items-center justify-center">
         <Spinner />
       </div>
     );
@@ -191,14 +201,14 @@ export function Editor({ selectedFile }: EditorProps) {
     <>
       <Tabs
         openedModels={openedModels}
-        activeModelUri={activeModelUri}
+        activeModelUri={selectedFile}
         onChangeModel={(m) => {
           if (!editorRef.current) return;
 
           const currentModel = editorRef.current.getModel();
           // Store model's view state before switching
           if (currentModel) {
-            console.log('setting view state from tabs');
+            console.log("setting view state from tabs");
             editorStates.set(currentModel, editorRef.current);
           }
 
@@ -207,7 +217,7 @@ export function Editor({ selectedFile }: EditorProps) {
         closeModel={(m) => {
           if (!editorRef.current) return;
 
-          console.log('setting view state before closing model');
+          console.log("setting view state before closing model");
           editorStates.set(m, editorRef.current);
 
           if (openedModels.length < 2) {
@@ -215,11 +225,24 @@ export function Editor({ selectedFile }: EditorProps) {
             editorRef.current.setModel(null);
             return;
           }
+
+          const newTabs = openedModels.filter(
+            (o) => o.uri.toString() !== m.uri.toString()
+          );
+
+          if (m.uri.toString() === selectedFile) {
+            const randomTab =
+              newTabs[Math.floor(Math.random() * newTabs.length)];
+
+            editorRef.current.setModel(randomTab);
+          }
+
+          setOpenedModels(newTabs);
         }}
       />
       <MonacoEditor
         loading={<Spinner />}
-        height='100%'
+        height="100%"
         options={{
           minimap: {
             enabled: false,
@@ -230,9 +253,9 @@ export function Editor({ selectedFile }: EditorProps) {
           padding: {
             top: 10,
           },
-          fontFamily: 'Cascadia Code',
+          fontFamily: "Cascadia Code",
         }}
-        theme='uitheme'
+        theme="uitheme"
         onMount={onMount}
       />
     </>

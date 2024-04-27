@@ -8,6 +8,7 @@
 
 - [ ] Modify dts-bundle to be in-memory
 - [ ] Better watch implementation
+- [ ] Better way to ensure home directory is always present
 
 ## Env variables
 

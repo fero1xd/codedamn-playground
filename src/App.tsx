@@ -1,22 +1,27 @@
-import { useDarkMode } from '@/hooks/use-dark-mode';
-import { Layout } from './layout';
-import { Editor } from './components/editor';
-import { FileTree } from './components/file-tree';
-import { useState } from 'react';
-import { Child } from './queries/types';
-import { LoadingPanel } from './playground/loading';
+import { useDarkMode } from "@/hooks/use-dark-mode";
+import { Layout } from "./layout";
+import { Editor } from "./components/editor";
+import { FileTree } from "./components/file-tree";
+import { useState } from "react";
+import { useTerminal } from "./hooks/use-terminal";
+import { TerminalX } from "./components/terminal";
 
 export function App() {
   useDarkMode();
 
-  // useTerminal()
+  const { dimensions, fitTerm, terminal } = useTerminal();
 
-  const [selectedFile, setSelectedFile] = useState<Child>();
+  const [selectedFile, setSelectedFile] = useState<string>();
   return (
     <>
-      <LoadingPanel />
+      {/* <Loa>dingPanel /> */}
       <Layout
-        editor={<Editor selectedFile={selectedFile} />}
+        editor={
+          <Editor
+            setSelectedFile={setSelectedFile}
+            selectedFile={selectedFile}
+          />
+        }
         fileTree={
           <FileTree
             selectedFile={selectedFile}
@@ -24,16 +29,14 @@ export function App() {
           />
         }
         terminal={
-          // <TerminalX
-          //   dimensions={dimensions}
-          //   terminal={terminal}
-          //   fitTerm={fitTerm}
-          // />
-          <></>
+          <TerminalX
+            dimensions={dimensions}
+            terminal={terminal}
+            fitTerm={fitTerm}
+          />
         }
         preview={<></>}
-        // onLayout={fitTerm}
-        onLayout={() => {}}
+        onLayout={fitTerm}
       />
     </>
   );

@@ -1,9 +1,9 @@
-import { Root, FetchEvents, ServerEvent } from '@/queries/types';
-import { PropsWithChildren, useMemo } from 'react';
-import { createContext } from 'react';
-import useWebSocket from 'react-use-websocket';
-import { WebSocketLike } from 'react-use-websocket/dist/lib/types';
-import { v4 } from 'uuid';
+import { Root, FetchEvents, ServerEvent } from "@/queries/types";
+import { PropsWithChildren, useRef } from "react";
+import { createContext } from "react";
+import useWebSocket from "react-use-websocket";
+import { WebSocketLike } from "react-use-websocket/dist/lib/types";
+import { v4 } from "uuid";
 
 type RemoveListenerCb = () => void;
 
@@ -29,18 +29,17 @@ export const WSContext = createContext<{
   conn: null,
 });
 
-const listeners: Map<string, (data: unknown) => void> = new Map();
-const subscriptions: Map<
-  string,
-  Map<string, (data: unknown) => void>
-> = new Map();
-
 export function WebSocketProvider({ children }: PropsWithChildren) {
-  const { getWebSocket, sendJsonMessage, readyState } = useWebSocket(
-    'ws://localhost:3001',
+  const listeners = useRef<Map<string, (data: unknown) => void>>(new Map());
+  const subscriptions = useRef<
+    Map<string, Map<string, (data: unknown) => void>>
+  >(new Map());
+
+  const { sendJsonMessage, getWebSocket, readyState } = useWebSocket(
+    "ws://localhost:3000",
     {
       onOpen() {
-        console.log('Connection opened');
+        console.log("Connection opened");
       },
       onMessage(e) {
         const reply = JSON.parse(e.data) as {
@@ -50,15 +49,16 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
         };
 
         if (reply.serverEvent) {
-          for (const cb of subscriptions.get(reply.serverEvent) || []) {
+          console.log(reply.serverEvent);
+          for (const cb of subscriptions.current.get(reply.serverEvent) || []) {
             cb[1](reply.data);
           }
           return;
         }
 
-        const handler = listeners.get(reply.nonce!);
+        const handler = listeners.current.get(reply.nonce!);
         if (!handler) {
-          console.log('no handler found for message', reply);
+          console.log("no handler found for message", reply);
           return;
         }
 
@@ -69,10 +69,48 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
     }
   );
 
-  const addListener = (nonce: string, cb: (data: unknown) => void) => {
-    listeners.set(nonce, cb);
+  // const sendJsonMessage = useCallback(
+  //   (data: Record<string, unknown>) => {
+  //     if (ws.current.readyState === 1) {
+  //       ws.current.send(JSON.stringify(data));
+  //     }
+  //   },
+  //   [ws]
+  // );
 
-    return () => listeners.delete(nonce);
+  // useEffect(() => {
+  //   ws.current.onopen = () => {
+  //     setReady(ws.current.readyState);
+  //   };
+
+  //   ws.current.onmessage = (e) => {
+  //     const reply = JSON.parse(e.data) as {
+  //       nonce?: string;
+  //       data: unknown;
+  //       serverEvent?: ServerEvent;
+  //     };
+
+  //     if (reply.serverEvent) {
+  //       for (const cb of subscriptions.get(reply.serverEvent) || []) {
+  //         cb[1](reply.data);
+  //       }
+  //       return;
+  //     }
+
+  //     const handler = listeners.get(reply.nonce!);
+  //     if (!handler) {
+  //       console.log("no handler found for message", reply);
+  //       return;
+  //     }
+
+  //     handler(reply.data);
+  //   };
+  // }, []);
+
+  const addListener = (nonce: string, cb: (data: unknown) => void) => {
+    listeners.current.set(nonce, cb);
+
+    return () => listeners.current.delete(nonce);
   };
 
   function fetchCall<T = unknown>(
@@ -99,7 +137,7 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
 
       timeout = setTimeout(() => {
         removeListener();
-        rej('Query timed out');
+        rej("Query timed out");
       }, 3000);
     });
 
@@ -110,12 +148,12 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
     event: ServerEvent,
     cb: (data: T) => void
   ) {
-    let subs = subscriptions.get(event);
+    let subs = subscriptions.current.get(event);
     const id = v4();
 
     if (!subs) {
-      subscriptions.set(event, new Map());
-      subs = subscriptions.get(event)!;
+      subscriptions.current.set(event, new Map());
+      subs = subscriptions.current.get(event)!;
     }
 
     subs.set(id, cb as any);
@@ -127,34 +165,23 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
 
   return (
     <WSContext.Provider
-      value={useMemo(
-        () => ({
+      value={{
+        conn: {
+          ws: getWebSocket(),
           sendJsonMessage,
-          conn: {
-            ws: getWebSocket(),
-            sendJsonMessage,
-            addListener,
-            queries: {
-              GENERATE_TREE(path) {
-                return fetchCall('GENERATE_TREE', {
-                  path,
-                }) as Promise<Root>;
-              },
-            },
-            // This is provided when no state management for query is required
-            fetchCall,
-            addSubscription: addSubscriptionForServerEvent,
-          },
-        }),
-        [
-          readyState,
-          getWebSocket,
-          addSubscriptionForServerEvent,
-          sendJsonMessage,
-          fetchCall,
           addListener,
-        ]
-      )}
+          queries: {
+            GENERATE_TREE(path) {
+              return fetchCall("GENERATE_TREE", {
+                path,
+              }) as Promise<Root>;
+            },
+          },
+          // This is provided when no state management for query is required
+          fetchCall,
+          addSubscription: addSubscriptionForServerEvent,
+        },
+      }}
     >
       {children}
     </WSContext.Provider>

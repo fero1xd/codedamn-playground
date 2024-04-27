@@ -1,6 +1,6 @@
-import { type IPty, spawn } from 'node-pty';
-import { createDirIfNotExists } from './fs';
-import { env } from './env';
+import { type IPty, spawn } from "node-pty";
+import { createDirIfNotExists } from "./fs";
+import { env } from "./env";
 
 export class TerminalManager {
   private sessions: { [id: string]: IPty } = {};
@@ -12,13 +12,12 @@ export class TerminalManager {
   async createPty(id: string, onData: (data: string) => void) {
     await createDirIfNotExists(env.WORK_DIR);
 
-    const term = spawn('bash', [], {
+    this.sessions[id]?.kill();
+
+    const term = spawn("/bin/zsh", ["--login"], {
       cols: 100,
-      name: 'xterm',
+      name: "xterm",
       cwd: env.WORK_DIR,
-      env: {
-        TERM: 'xterm-256color',
-      },
     });
 
     //    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
@@ -28,6 +27,7 @@ export class TerminalManager {
     this.sessions[id] = term;
 
     term.onExit(() => {
+      console.log("on exit");
       delete this.sessions[term.pid];
     });
 

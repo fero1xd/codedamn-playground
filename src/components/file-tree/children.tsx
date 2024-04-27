@@ -1,13 +1,14 @@
-import { Child, Node } from '@/queries/types';
-import { getIcon } from './icons';
-import { cn } from '@/lib/utils';
-import { useMemo, useState } from 'react';
-import { useWSQuery } from '@/hooks/use-ws-query';
+import { Child, Node } from "@/queries/types";
+import { getIcon } from "./icons";
+import { cn } from "@/lib/utils";
+import { useMemo, useState } from "react";
+import { useWSQuery } from "@/hooks/use-ws-query";
+import { monaco } from "../editor/monaco";
 
 type ChildrenProps = {
   node: Node;
   selectedDir: Child | undefined;
-  selectedFile: Child | undefined;
+  selectedFile: string | undefined;
   onSelect: (node: Child) => void;
 };
 
@@ -19,7 +20,7 @@ export function Children({
 }: ChildrenProps) {
   return node.children.map((c) => (
     <Item
-      key={c.path + '/' + c.name}
+      key={c.path + "/" + c.name}
       node={c}
       selectedDir={selectedDir}
       onSelect={onSelect}
@@ -35,8 +36,12 @@ type ItemProps = ChildrenProps & {
 function Item({ node, selectedDir, onSelect, selectedFile }: ItemProps) {
   const [open, setOpen] = useState(false);
   const path = node.path;
+  const uri = monaco.Uri.parse(
+    `file:///${path.startsWith("/") ? path.slice(1) : path}`
+  ).toString();
+
   const isSelected = selectedFile
-    ? selectedFile.path === path
+    ? selectedFile === uri
     : selectedDir?.path === path;
 
   return (
@@ -51,12 +56,12 @@ function Item({ node, selectedDir, onSelect, selectedFile }: ItemProps) {
         }}
         className={cn(
           `flex items-center transition-all ease-out`,
-          `${isSelected ? 'bg-[#020509]' : 'bg-transparent'} hover:cursor-pointer hover:bg-[#020509]`
+          `${isSelected ? "bg-gray-900" : "bg-transparent"} hover:cursor-pointer hover:bg-gray-900`
         )}
         style={{ paddingLeft: `${node.depth * 16}px` }}
       >
-        <span className='flex w-[32px] h-[32px] items-center justify-center'>
-          {getIcon(node.name.split('.').pop() || '', node.name, {
+        <span className="flex w-[32px] h-[32px] items-center justify-center">
+          {getIcon(node.name.split(".").pop() || "", node.name, {
             isDir: node.isDir,
             open,
           })}
@@ -79,13 +84,13 @@ function Item({ node, selectedDir, onSelect, selectedFile }: ItemProps) {
 
 function Nested({ node: dir, onSelect, selectedDir, selectedFile }: ItemProps) {
   const { data, isLoading } = useWSQuery(
-    ['GENERATE_TREE', dir.path],
+    ["GENERATE_TREE", dir.path],
     120 * 1000
   );
 
   const useFullData = useMemo(() => {
     if (data) {
-      console.log('nested', dir.path, dir.name);
+      console.log("nested", dir.path, dir.name);
       const cloned = { ...data };
 
       cloned.children.forEach((c) => {

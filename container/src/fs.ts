@@ -1,29 +1,49 @@
-import fs from 'fs/promises';
-import path from 'path';
-import type { Dependencies, Root } from './types';
-import { env } from './env';
-import { watchFile } from 'fs';
+import fs from "fs/promises";
+import path from "path";
+import type { Dependencies, Root } from "./types";
+import { env } from "./env";
+import { watchFile } from "fs";
+import { bundleTypeDefs } from "./typings";
 
 export const watchForDepsChange = (
   path: string,
-  cb: (deps: Dependencies) => void
+  cb: (types: Record<string, string>) => void
 ) => {
+  // Will ensure that home directory is always present
+  getWorkDir();
+
   watchFile(path, async () => {
     try {
-      const file = await fs.readFile(path, { encoding: 'utf-8' });
-      const json = JSON.parse(file);
-
-      cb({
-        dependencies: json.dependencies || {},
-        devDependencies: json.devDependencies || {},
-      });
+      const bundledTypes = await readAndBundleTypes();
+      cb(bundledTypes);
     } catch (e) {
-      console.log('IO error watching file');
+      console.log("IO error watching file");
       console.log(e);
     }
   });
 
-  console.log('watching file');
+  console.log("watching file");
+};
+
+export const readAndBundleTypes = async () => {
+  try {
+    const workDir = await getWorkDir();
+    const packagePath = path.join(workDir, "package.json");
+
+    const file = await fs.readFile(packagePath, { encoding: "utf-8" });
+    const json = JSON.parse(file) as Partial<Dependencies>;
+
+    const bundledTypes = await bundleTypeDefs({
+      dependencies: json.dependencies || {},
+      devDependencies: json.devDependencies || {},
+    });
+
+    return bundledTypes || {};
+  } catch (e) {
+    console.log("error while reading dep file");
+    console.log(e);
+    return {};
+  }
 };
 
 export const generateFileTree = async (dirName: string) => {
@@ -68,10 +88,14 @@ export const getFileContent = async (filePath: string) => {
     lruCache.delete(lruCache.keys().next().value);
   }
 
-  const c = await fs.readFile(filePath, { encoding: 'utf-8' });
-  lruCache.set(filePath, c);
-
-  return c;
+  try {
+    const c = await fs.readFile(filePath, { encoding: "utf-8" });
+    lruCache.set(filePath, c);
+    return c;
+  } catch (e) {
+    console.log("error while fetching content for a file");
+    console.log(e);
+  }
 };
 
 export const createDirIfNotExists = async (dirPath: string) => {
@@ -90,3 +114,10 @@ export async function exists(f: string) {
     return false;
   }
 }
+
+export const getWorkDir = async () => {
+  const p = env.WORK_DIR;
+
+  await createDirIfNotExists(p);
+  return p;
+};

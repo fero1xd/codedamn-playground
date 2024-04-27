@@ -1,16 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
-import { useConnection } from './use-connection';
-import { Conn } from '@/providers/ws';
+import { useQuery } from "@tanstack/react-query";
+import { useConnection } from "./use-connection";
+import { Conn } from "@/providers/ws";
 
-type TParams<T extends keyof Conn['queries']> =
-  Parameters<Conn['queries'][T]> extends [...infer Rest] ? Rest : never;
+type TParams<T extends keyof Conn["queries"]> =
+  Parameters<Conn["queries"][T]> extends [...infer Rest] ? Rest : never;
 
-export type QueryKey<T extends keyof Conn['queries']> = [
+export type QueryKey<T extends keyof Conn["queries"]> = [
   T,
   ...params: TParams<T>,
 ];
 
-export function useWSQuery<K extends keyof Conn['queries']>(
+export function useWSQuery<K extends keyof Conn["queries"]>(
   key: QueryKey<K>,
   staleTime?: number
 ) {
@@ -22,7 +22,9 @@ export function useWSQuery<K extends keyof Conn['queries']>(
   return useQuery<QueryReturnType>({
     queryKey: key,
     queryFn: async () => {
-      if (!connection) throw new Error('something went very wrong');
+      if (!connection) throw new Error("something went very wrong");
+
+      console.log("sending req " + key);
 
       // Some weird type issue
       /* eslint-disable-next-line */

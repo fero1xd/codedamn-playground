@@ -1,17 +1,24 @@
-import { WebSocketServer } from 'ws';
-import { parseJSON } from './utils';
-import { parseMessage, sendResponse } from './ws';
-import { IncomingMessage, OutgoingMessageType } from './types';
-import { generateFileTree, getFileContent, watchForDepsChange } from './fs';
-import { TerminalManager } from './sessions';
-import { v4 } from 'uuid';
-import { env } from './env';
-import path from 'path';
+import "dotenv/config";
+import { WebSocketServer } from "ws";
+import { parseJSON } from "./utils";
+import { parseMessage, sendResponse } from "./ws";
+import { IncomingMessage, OutgoingMessageType } from "./types";
+import {
+  generateFileTree,
+  getFileContent,
+  readAndBundleTypes,
+  watchForDepsChange,
+} from "./fs";
+import { TerminalManager } from "./sessions";
+import { v4 } from "uuid";
+import { env } from "./env";
+import path from "path";
 
 const main = () => {
+  const port = 3000;
   const wss = new WebSocketServer({
-    port: 3001,
-    host: '0.0.0.0',
+    port,
+    host: "0.0.0.0",
   });
 
   const terminalManager = new TerminalManager();
@@ -19,9 +26,9 @@ const main = () => {
   let idleTimeout: NodeJS.Timeout | null = null;
 
   const terminateProcess = () => {
-    console.log('Idle container exiting it');
+    console.log("Idle container exiting it");
     if (wss.clients.size > 0) {
-      console.log('users are doing nothing... pause the container here');
+      console.log("users are doing nothing... pause the container here");
       // Todo: 'pause" the container here
       return;
     }
@@ -34,7 +41,8 @@ const main = () => {
     idleTimeout = setTimeout(terminateProcess, idleInterval);
   };
 
-  const idleInterval = 120 * 1000;
+  // 5 Mins
+  const idleInterval = 5 * 60 * 1000;
 
   watchForDepsChange(path.join(env.WORK_DIR, env.DEPS_FILE), (deps) => {
     wss.clients.forEach((c) => {
@@ -51,26 +59,23 @@ const main = () => {
   resetIdleTimeout();
 
   // TODO: Add authentication
-  wss.on('connection', (ws) => {
+  wss.on("connection", (ws) => {
     const wsId = v4();
     resetIdleTimeout();
 
-    getFileContent(path.join(env.WORK_DIR, env.DEPS_FILE)).then((deps) => {
-      const json = JSON.parse(deps);
+    console.log("new connection");
 
-      sendResponse(
-        {
-          serverEvent: OutgoingMessageType.INSTALL_DEPS,
-          data: {
-            dependencies: json.dependencies || {},
-            devDependencies: json.devDependencies || {},
-          },
-        },
-        ws
-      );
-    });
+    // readAndBundleTypes().then((types) => {
+    //   sendResponse(
+    //     {
+    //       serverEvent: OutgoingMessageType.INSTALL_DEPS,
+    //       data: types,
+    //     },
+    //     ws
+    //   );
+    // });
 
-    ws.on('message', async (data, isBinary) => {
+    ws.on("message", async (data, isBinary) => {
       if (isBinary) return;
       resetIdleTimeout();
       const raw = data.toString();
@@ -78,7 +83,7 @@ const main = () => {
       const { success: zodSuccess, data: message } = parseMessage(json);
 
       if (!success || !zodSuccess) {
-        console.log('invalid ws message');
+        console.log("invalid ws message");
         return;
       }
 
@@ -104,13 +109,14 @@ const main = () => {
           break;
 
         case IncomingMessage.TERMINAL_SESSION_START:
+          console.log("new term request");
           await terminalManager.createPty(wsId, (data) => {
             sendResponse(
               { serverEvent: OutgoingMessageType.TERMINAL_DATA, data },
               ws
             );
           });
-          sendResponse({ nonce: message.nonce, data: 'OK' }, ws);
+          sendResponse({ nonce: message.nonce, data: "OK" }, ws);
           break;
 
         case IncomingMessage.TERMINAL_USER_CMD:
@@ -122,8 +128,8 @@ const main = () => {
     });
   });
 
-  wss.on('listening', () => {
-    console.log('Container listening on port 3000');
+  wss.on("listening", () => {
+    console.log("Container listening on port " + port);
   });
 };
 

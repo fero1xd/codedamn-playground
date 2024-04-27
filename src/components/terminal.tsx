@@ -1,7 +1,7 @@
-import { Terminal } from '@xterm/xterm';
-import { useEffect, useRef } from 'react';
-import '@/styles/xterm.css';
-import { Dimensions } from '@/lib/types';
+import { Terminal } from "@xterm/xterm";
+import { useEffect, useRef } from "react";
+import "@/styles/xterm.css";
+import { Dimensions } from "@/lib/types";
 
 export function TerminalX({
   dimensions,
@@ -19,13 +19,13 @@ export function TerminalX({
     if (!termRef.current || socket.current) return;
 
     // This will be later the actual container url
-    const ws = new WebSocket('ws://localhost:3001');
+    const ws = new WebSocket("ws://localhost:3000");
     socket.current = ws;
 
     ws.onmessage = (e) => {
       const json = JSON.parse(e.data);
 
-      if (json.serverEvent && json.serverEvent === 'TERMINAL_DATA') {
+      if (json.serverEvent && json.serverEvent === "TERMINAL_DATA") {
         terminal.write(json.data);
         console.log(typeof json.data);
       }
@@ -34,8 +34,8 @@ export function TerminalX({
     terminal.onData((cmd) => {
       ws.send(
         JSON.stringify({
-          nonce: '__ignored__',
-          event: 'TERMINAL_USER_CMD',
+          nonce: "__ignored__",
+          event: "TERMINAL_USER_CMD",
           data: { cmd },
         })
       );
@@ -44,12 +44,12 @@ export function TerminalX({
     ws.onopen = () => {
       ws.send(
         JSON.stringify({
-          event: 'TERMINAL_SESSION_START',
-          nonce: '__terminal__start',
+          event: "TERMINAL_SESSION_START",
+          nonce: "__terminal__start",
         })
       );
 
-      console.log('opening terminal');
+      console.log("opening terminal");
       fitTerm();
 
       if (termRef.current) {
@@ -62,19 +62,19 @@ export function TerminalX({
     };
 
     ws.onclose = () => {
-      console.log('terminal session closed from backend');
+      console.log("terminal session closed from backend");
     };
   }, [termRef, socket, terminal, fitTerm]);
 
   useEffect(() => {
     const onResizeWindow = () => {
-      console.log('window resize, forcing fit');
+      console.log("window resize, forcing fit");
       fitTerm();
     };
 
-    window.addEventListener('resize', onResizeWindow);
+    window.addEventListener("resize", onResizeWindow);
     return () => {
-      window.removeEventListener('resize', onResizeWindow);
+      window.removeEventListener("resize", onResizeWindow);
     };
   }, [fitTerm]);
 
@@ -87,11 +87,11 @@ export function TerminalX({
     )
       return;
 
-    console.log('**sending resize request**');
+    console.log("**sending resize request**");
     socket.current.send(
       JSON.stringify({
-        event: 'RESIZE_TERMINAL',
-        nonce: '__ignore__',
+        event: "RESIZE_TERMINAL",
+        nonce: "__ignore__",
         data: {
           cols: terminal.cols,
           rows: terminal.rows,
@@ -101,6 +101,6 @@ export function TerminalX({
   }, [dimensions, socket, terminal]);
 
   return (
-    <div style={{ height: '100%' }} className='text-left' ref={termRef}></div>
+    <div style={{ height: "100%" }} className="text-left" ref={termRef}></div>
   );
 }

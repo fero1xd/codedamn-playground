@@ -18,6 +18,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@upstash/redis": "^1.30.0",
     "dts-bundle": "^0.7.3",
     "node-pty": "^1.0.0",
     "tsup": "^8.0.2",
