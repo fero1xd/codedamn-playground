@@ -2,7 +2,6 @@
 
 1. React Typescript
 2. Bun Typescript
-3. Node JS
 
 ## TODO
 

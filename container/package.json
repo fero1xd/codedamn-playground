@@ -14,14 +14,19 @@
     "@types/ws": "^8.5.10",
     "bun-types": "latest",
     "dts-bundle-generator": "^9.5.1",
-    "tsx": "^4.7.2"
+    "tsx": "^4.7.3"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
     "@upstash/redis": "^1.30.0",
+    "chokidar": "^3.6.0",
+    "dotenv": "^16.4.5",
     "dts-bundle": "^0.7.3",
+    "glob": "^10.3.12",
+    "is-docker": "^3.0.0",
+    "lru-cache": "^10.2.1",
     "node-pty": "^1.0.0",
     "tsup": "^8.0.2",
     "uuid": "^9.0.1",

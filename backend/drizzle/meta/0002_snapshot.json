@@ -1,0 +1,59 @@
+{
+  "id": "be4c50f9-aa03-4042-a132-98d3861efd59",
+  "prevId": "ac6103f5-aac1-4a33-aa95-f29fe28d530d",
+  "version": "5",
+  "dialect": "pg",
+  "tables": {
+    "playgrounds": {
+      "name": "playgrounds",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "template": {
+          "name": "template",
+          "type": "template",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(256)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {
+    "template": {
+      "name": "template",
+      "values": {
+        "typescript": "typescript",
+        "reactypescript": "reactypescript"
+      }
+    }
+  },
+  "schemas": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

@@ -1,7 +1,6 @@
 FROM oven/bun:1.1.4 as base
 
-USER root
-WORKDIR /root/driver
+WORKDIR /opt/driver
 
 # Install packages
 RUN apt-get update -y && \
@@ -60,6 +59,11 @@ RUN bun run build
 
 FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
-COPY --from=prerelease /root/driver/dist/index.mjs .
+COPY --from=prerelease /opt/driver/dist/index.mjs .
 
-RUN $COMMAND
+
+RUN useradd -ms /bin/bash slave
+USER slave
+
+
+CMD $COMMAND

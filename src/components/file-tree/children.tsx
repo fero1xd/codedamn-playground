@@ -90,7 +90,6 @@ function Nested({ node: dir, onSelect, selectedDir, selectedFile }: ItemProps) {
 
   const useFullData = useMemo(() => {
     if (data) {
-      console.log("nested", dir.path, dir.name);
       const cloned = { ...data };
 
       cloned.children.forEach((c) => {

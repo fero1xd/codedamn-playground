@@ -3,20 +3,14 @@ import { WebSocketServer } from "ws";
 import { parseJSON } from "./utils";
 import { parseMessage, sendResponse } from "./ws";
 import { IncomingMessage, OutgoingMessageType } from "./types";
-import {
-  generateFileTree,
-  getFileContent,
-  readAndBundleTypes,
-  saveFile,
-  watchForDepsChange,
-} from "./fs";
+import { fsService } from "./fs";
 import { TerminalManager } from "./sessions";
 import { v4 } from "uuid";
 import { env } from "./env";
 import path from "path";
 
 const main = () => {
-  const port = 3000;
+  const port = 3001;
   const wss = new WebSocketServer({
     port,
     host: "0.0.0.0",
@@ -45,14 +39,33 @@ const main = () => {
   // 5 Mins
   const idleInterval = 5 * 60 * 1000;
 
-  watchForDepsChange(path.join(env.WORK_DIR, env.DEPS_FILE), (deps) => {
-    wss.clients.forEach((c) => {
+  // fsService.watchForDepsChange(
+  //   path.join(env.WORK_DIR, env.DEPS_FILE),
+  //   (deps) => {
+  //     wss.clients.forEach((c) => {
+  //       sendResponse(
+  //         {
+  //           serverEvent: OutgoingMessageType.INSTALL_DEPS,
+  //           data: deps,
+  //         },
+  //         c
+  //       );
+  //     });
+  //   }
+  // );
+
+  fsService.watchWorkDir((event, path) => {
+    wss.clients.forEach((ws) => {
       sendResponse(
         {
-          serverEvent: OutgoingMessageType.INSTALL_DEPS,
-          data: deps,
+          serverEvent: OutgoingMessageType.REFETCH_DIR,
+          // data: finalPath === env.WORK_DIR ? "" : finalPath,
+          data: {
+            event,
+            path,
+          },
         },
-        c
+        ws
       );
     });
   });
@@ -75,7 +88,6 @@ const main = () => {
     //     ws
     //   );
     // });
-
     ws.on("message", async (data, isBinary) => {
       if (isBinary) return;
       resetIdleTimeout();
@@ -90,7 +102,11 @@ const main = () => {
 
       switch (message?.event) {
         case IncomingMessage.SAVE_CHANGES:
-          await saveFile(message.data.filePath, message.data.newContent);
+          console.log("save changes req");
+          await fsService.saveFile(
+            message.data.filePath,
+            message.data.newContent
+          );
           sendResponse(
             { serverEvent: OutgoingMessageType.FILE_SAVED, data: "File saved" },
             ws
@@ -100,7 +116,9 @@ const main = () => {
           sendResponse(
             {
               nonce: message.nonce,
-              data: await generateFileTree(message?.data?.path || env.WORK_DIR),
+              data: await fsService.generateFileTree(
+                message?.data?.path || env.WORK_DIR
+              ),
             },
             ws
           );
@@ -110,14 +128,13 @@ const main = () => {
           sendResponse(
             {
               nonce: message.nonce,
-              data: await getFileContent(message.data.filePath),
+              data: await fsService.getFileContent(message.data.filePath),
             },
             ws
           );
           break;
 
         case IncomingMessage.TERMINAL_SESSION_START:
-          console.log("new term request");
           await terminalManager.createPty(wsId, (data) => {
             sendResponse(
               { serverEvent: OutgoingMessageType.TERMINAL_DATA, data },
@@ -132,6 +149,25 @@ const main = () => {
           break;
         case IncomingMessage.RESIZE_TERMINAL:
           terminalManager.resize(wsId, message.data);
+          break;
+        case IncomingMessage.GET_PROJECT_FILES:
+          fsService.getAllProjectFiles(env.WORK_DIR).then(async (it) => {
+            if (!it) return;
+
+            const map: Record<string, string> = {};
+
+            for await (const file of it) {
+              map[file.name] = file.contents || "";
+            }
+
+            sendResponse(
+              {
+                nonce: message.nonce,
+                data: map,
+              },
+              ws
+            );
+          });
       }
     });
   });

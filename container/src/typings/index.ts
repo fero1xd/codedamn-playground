@@ -1,16 +1,15 @@
-import "dotenv/config";
 import { Dependencies, PackageJSON } from "../types";
 import path from "path";
-import { exists, getWorkDir } from "../fs";
+import { fsService } from "../fs";
 import { readFile } from "fs/promises";
 import * as dts from "dts-bundle";
 import { redis } from "../upstash/redis";
 
 export const bundleTypeDefs = async (deps: Dependencies) => {
-  const workDir = await getWorkDir();
+  const workDir = await fsService.getWorkDir();
   const nodeModulesPath = path.join(workDir, "node_modules");
 
-  if (!(await exists(nodeModulesPath))) {
+  if (!(await fsService.exists(nodeModulesPath))) {
     return console.log("node modules doesnt exist");
   }
 

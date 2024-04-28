@@ -1,7 +1,22 @@
-import { getDB } from "./config";
+import express from "express";
+
+import { a } from "./config"
+
+console.log(a)
 
 const main = () => {
-	console.log(getDB);
+	
+	const app = express();
+
+	app.get("/", (_, res) => {
+		res.json({
+			message: "functional",
+		});
+	});
+
+	app.listen(5174, () => {
+		console.log("Listening on port 5173");
+	});
 };
 
 main();

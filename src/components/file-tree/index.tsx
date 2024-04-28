@@ -1,10 +1,12 @@
-import { Child } from "@/queries/types";
-import { useMemo, useState } from "react";
+import { ChangeEvent, Child } from "@/queries/types";
+import { useEffect, useMemo, useState } from "react";
 import { Children } from "./children";
 import { useQueryClient } from "@tanstack/react-query";
 import { useWSQuery } from "@/hooks/use-ws-query";
 import { Spinner } from "../ui/loading";
 import { monaco } from "../editor/monaco";
+import { useConnection } from "@/hooks/use-connection";
+import path from "path-browserify";
 
 const addDepth = (children: Child[], currentDepth: number) => {
   children.forEach((i) => {
@@ -32,6 +34,41 @@ export function FileTree({
   );
 
   const queryClient = useQueryClient();
+  const conn = useConnection();
+
+  useEffect(() => {
+    if (!conn) return;
+
+    const removeListener = conn.addSubscription(
+      "REFETCH_DIR",
+      (data: ChangeEvent) => {
+        console.log("change event in file tree");
+        const finalPath =
+          path.join(data.path, "..") === treeRoot?.path
+            ? ""
+            : path.join(data.path, "..");
+
+        if (finalPath === "") {
+          queryClient.invalidateQueries({
+            predicate(query) {
+              return (
+                query.queryKey[0] === "GENERATE_TREE" &&
+                query.queryKey.length === 1
+              );
+            },
+            refetchType: "all",
+          });
+        } else {
+          queryClient.invalidateQueries({
+            queryKey: ["GENERATE_TREE", finalPath],
+            refetchType: "all",
+          });
+        }
+      }
+    );
+
+    return () => removeListener();
+  }, []);
 
   useMemo(() => {
     if (treeRoot) {
@@ -72,13 +109,11 @@ export function FileTree({
   };
 
   return (
-    <div className="flex flex-col h-full min-w-full pt-4 overflow-scroll max-h-[99vh] file__tree">
-      <Children
-        selectedFile={selectedFile}
-        node={treeRoot}
-        onSelect={onSelect}
-        selectedDir={selectedDir}
-      />
-    </div>
+    <Children
+      selectedFile={selectedFile}
+      node={treeRoot}
+      onSelect={onSelect}
+      selectedDir={selectedDir}
+    />
   );
 }

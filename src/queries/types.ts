@@ -13,7 +13,10 @@ export interface Node {
 
 export interface Root extends Node {}
 
-export type FetchEvents = "GENERATE_TREE" | "FILE_CONTENT";
+export type FetchEvents =
+  | "GENERATE_TREE"
+  | "FILE_CONTENT"
+  | "GET_PROJECT_FILES";
 
 // From client -> server
 export type WSEvents =
@@ -22,9 +25,19 @@ export type WSEvents =
   | "SAVE_CHANGES";
 
 // From client <- server
-export type ServerEvent = "INSTALL_DEPS" | "TERMINAL_DATA" | "FILE_SAVED";
+export type ServerEvent =
+  | "INSTALL_DEPS"
+  | "TERMINAL_DATA"
+  | "FILE_SAVED"
+  | "ADD_FILE"
+  | "REFETCH_DIR";
 
 export type Dependencies = {
   dependencies: Record<string, string>;
   devDependencies: Record<string, string>;
+};
+
+export type ChangeEvent = {
+  event: "add" | "unlink" | "addDir" | "unlinkDir";
+  path: string;
 };

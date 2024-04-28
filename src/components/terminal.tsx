@@ -7,10 +7,12 @@ export function TerminalX({
   dimensions,
   terminal,
   fitTerm,
+  forceFit,
 }: {
   terminal: Terminal;
   dimensions: Dimensions | undefined;
   fitTerm: () => void;
+  forceFit: () => void;
 }) {
   const termRef = useRef<HTMLDivElement | null>(null);
   const socket = useRef<WebSocket>();
@@ -19,7 +21,7 @@ export function TerminalX({
     if (!termRef.current || socket.current) return;
 
     // This will be later the actual container url
-    const ws = new WebSocket("ws://localhost:3000");
+    const ws = new WebSocket("ws://localhost:3001");
     socket.current = ws;
 
     ws.onmessage = (e) => {
@@ -50,13 +52,13 @@ export function TerminalX({
       );
 
       console.log("opening terminal");
-      fitTerm();
+      forceFit();
 
       if (termRef.current) {
         terminal.open(termRef.current);
         setTimeout(() => {
-          fitTerm();
-          fitTerm();
+          forceFit();
+          forceFit();
         }, 500);
       }
     };
@@ -68,7 +70,7 @@ export function TerminalX({
 
   useEffect(() => {
     const onResizeWindow = () => {
-      console.log("window resize, forcing fit");
+      console.log("resize");
       fitTerm();
     };
 
@@ -87,7 +89,6 @@ export function TerminalX({
     )
       return;
 
-    console.log("**sending resize request**");
     socket.current.send(
       JSON.stringify({
         event: "RESIZE_TERMINAL",

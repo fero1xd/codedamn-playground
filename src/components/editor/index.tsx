@@ -21,6 +21,12 @@ import { Spinner } from "../ui/loading";
 import { safeName } from "./utils/imports";
 import { useDebouncedCallback } from "use-debounce";
 import { useToast } from "../ui/use-toast";
+import { Bread } from "./bread";
+import { useWSQuery } from "@/hooks/use-ws-query";
+import { useQueryClient } from "@tanstack/react-query";
+import path from "path-browserify";
+import { Root } from "@/queries/types";
+import { Placeholder } from "./placeholder";
 
 const editorStates = new EditorState();
 
@@ -36,11 +42,18 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
   const [openedModels, setOpenedModels] = useState<TextModel[]>([]);
   const editorRef = useRef<EditorType>();
 
+  const { data: treeRoot } = useWSQuery(
+    ["GENERATE_TREE"],
+    // A sub tree would be fresh for 2 minutes so react query will not refetch again and again on selection of same folders
+    120 * 1000
+  );
+
   const conn = useConnection();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const openFile = useCallback(
-    async (editor: EditorType, m: Monaco, fileUri: string) => {
+    async (editor: EditorType, m: Monaco, fileUri: string, silent = false) => {
       if (!conn) return;
 
       const currentModel = editor.getModel();
@@ -54,6 +67,9 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
 
       if (existingModel) {
         console.log("existing model");
+
+        if (silent) return;
+
         // @ts-expect-error broken types
         editor.setModel(existingModel);
 
@@ -74,11 +90,11 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
           filePath: fileUri.replace("file://", ""),
         });
 
-        const createdModel = m.editor.createModel(
-          contents,
-          undefined,
-          monaco.Uri.parse(fileUri)
-        );
+        const uri = monaco.Uri.parse(fileUri);
+        const createdModel = m.editor.createModel(contents, undefined, uri);
+
+        console.log("created model", createdModel);
+        if (silent) return;
 
         // @ts-expect-error Broken types
         editor.setModel(createdModel);
@@ -92,24 +108,77 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
   useEffect(() => {
     if (!conn) return;
 
-    console.log("adding save file listener");
-    const removeListener = conn.addSubscription("FILE_SAVED", (msg: string) => {
-      console.log("server event file saved: " + msg);
-      toast({
-        title: "File Saved",
-        description: "Your changes are successfuly saved",
-      });
-    });
+    const removeListener1 = conn.addSubscription(
+      "FILE_SAVED",
+      (msg: string) => {
+        // toast({
+        //   title: "File Saved",
+        //   description: "Your changes are successfuly saved",
+        // });
+        console.log("server event file saved: " + msg);
+      }
+    );
+
+    const removeListener2 = conn.addSubscription(
+      "REFETCH_DIR",
+      async (data: {
+        event: "add" | "addDir" | "unlink" | "unlinkDir";
+        path: string;
+      }) => {
+        console.log("changes in work dir: editor", data);
+        const treeRoot = await queryClient.getQueryData<Root>([
+          "GENERATE_TREE",
+        ]);
+        if (!treeRoot) return;
+
+        if (data.event === "add") {
+          if (!editorRef.current || !monacoInstance) return;
+
+          openFile(
+            editorRef.current,
+            monacoInstance,
+            monaco.Uri.parse(
+              `file:///${data.path.startsWith("/") ? data.path.slice(1) : data.path}`
+            ).toString(),
+            true
+          );
+        } else if (data.event === "unlink") {
+          if (!editorRef.current || !monacoInstance) return;
+
+          const doesExists = monacoInstance.editor.getModel(
+            monaco.Uri.parse(
+              `file:///${data.path.startsWith("/") ? data.path.slice(1) : data.path}`
+            )
+          );
+
+          if (doesExists) {
+            console.log("unlinking/disposing model", data.path);
+
+            setOpenedModels((prevModels) =>
+              prevModels.filter(
+                (p) => p.uri.toString() !== doesExists.uri.toString()
+              )
+            );
+
+            if (selectedFile === doesExists.uri.toString()) {
+              // Maybe switch models later here
+              setSelectedFile(undefined);
+            }
+
+            doesExists.dispose();
+          }
+        }
+      }
+    );
 
     return () => {
-      removeListener();
+      removeListener1();
+      removeListener2();
     };
-  }, []);
+  }, [monacoInstance]);
 
   useEffect(() => {
     if (!conn) return;
-
-    console.log("yo from editor");
 
     const removeSub = conn.addSubscription<Record<string, string>>(
       "INSTALL_DEPS",
@@ -149,6 +218,16 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
         event.newModelUrl ? event.newModelUrl.toString() : undefined
       );
 
+      if (event.oldModelUrl) {
+        const oldModel = m.editor.getModel(event.oldModelUrl);
+        if (!oldModel) return;
+
+        const contents = oldModel.getValue();
+
+        saveChanges.cancel();
+        saveChangesRaw(oldModel.uri.path, contents);
+      }
+
       // Restore model view state if exists
       if (!event.newModelUrl) return;
 
@@ -168,18 +247,35 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
     configureCss(m);
     configureJson(m);
     configureMd(m);
-    configureTs(e, m);
-    configureJs(e, m);
     // Language configurations end here
-    setupKeybindings(e);
+    setupKeybindings(e, () => {
+      const currentModel = editorRef.current?.getModel();
+      if (!currentModel) return;
+
+      saveChanges.cancel();
+      saveChangesRaw(currentModel.uri.path, currentModel.getValue());
+    });
 
     // Start with a fresh slate
     m.editor.getModels().forEach((m) => m.dispose());
 
-    m.languages.typescript.typescriptDefaults.addExtraLib(
-      "declare module 'twice' { export type Foo = string; }",
-      `file:///index.d.ts`
-    );
+    const maps = await conn?.queries.GET_PROJECT_FILES();
+    if (!maps) return;
+
+    for (const filePath of Object.keys(maps)) {
+      m.editor.createModel(
+        maps[filePath] || "",
+        undefined,
+        monaco.Uri.parse(filePath.replace("/", ""))
+      );
+    }
+
+    toast({
+      description: "Loaded all project files",
+    });
+
+    configureTs(e, m);
+    configureJs(e, m);
   };
 
   // const resolveDeps = useDebouncedCallback(async () => {
@@ -217,21 +313,23 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
   //   // }
   // }, 1000);
 
-  const saveChanges = useDebouncedCallback(
-    async (filePath: string, contents: string) => {
-      if (!conn || conn.ws?.readyState !== 1) return;
+  const saveChangesRaw = async (filePath: string, contents: string) => {
+    if (!conn || conn.ws?.readyState !== 1) return;
 
-      conn.sendJsonMessage({
-        nonce: "__ignored__",
-        event: "SAVE_CHANGES",
-        data: {
-          filePath,
-          newContent: contents,
-        },
-      });
-    },
-    5000
-  );
+    console.log(filePath, contents);
+    console.log(!!conn);
+
+    conn.sendJsonMessage({
+      nonce: "__ignored__",
+      event: "SAVE_CHANGES",
+      data: {
+        filePath,
+        newContent: contents,
+      },
+    });
+  };
+
+  const saveChanges = useDebouncedCallback(saveChangesRaw, 5000);
 
   if (!themeLoaded) {
     return (
@@ -284,6 +382,10 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
           setOpenedModels(newTabs);
         }}
       />
+      {selectedFile && treeRoot && (
+        <Bread selectedFile={selectedFile} rootPath={treeRoot.path} />
+      )}
+      {!selectedFile && <Placeholder />}
       <MonacoEditor
         loading={<Spinner />}
         height="100%"
@@ -297,7 +399,7 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
           padding: {
             top: 10,
           },
-          fontFamily: "Cascadia Code",
+          fontFamily: "Cascadia Code, Sans Serif",
         }}
         theme="uitheme"
         onChange={(contents) => {

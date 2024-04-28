@@ -1,0 +1,1 @@
+ALTER TYPE "template" ADD VALUE 'reactypescript';

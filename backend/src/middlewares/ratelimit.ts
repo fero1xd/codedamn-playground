@@ -1,13 +1,16 @@
-import { Context, Next } from 'hono';
-import { identifier, ratelimit } from '../upstash/ratelimit';
+import { Context, Next } from "hono";
+import { identifier, ratelimit } from "../upstash/ratelimit";
 
 export function doRatelimit() {
   return async function (c: Context, next: Next) {
-    if (!c.req.path.startsWith('/playgrounds/create')) {
+    if (process.env.DEVELOPMENT) {
+      return await next();
+    }
+    if (!c.req.path.startsWith("/playgrounds/create")) {
       return await next();
     }
 
-    console.log('rate limiting');
+    console.log("rate limiting");
 
     const { success, reset } = await ratelimit.limit(identifier);
 

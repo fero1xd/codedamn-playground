@@ -58,8 +58,8 @@ export function Browser({ containerUrl }: { containerUrl: string }) {
       </div>
       <iframe
         key={key}
-        className="h-full w-full p-2"
-        src="https://www.twitch.tv/embed/s0mcs/chat?parent=localhost&darkpopout"
+        className="h-full w-full p-2 bg-auto bg-white"
+        src="http://localhost:5174"
         ref={ref}
         onLoad={() => {
           console.log("loaded iframe");

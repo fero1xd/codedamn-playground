@@ -1,13 +1,2 @@
-const DB = {
-  getAdmin: () => {
-    return {
-      user: 'admin',
-      password: 'supersecretpassword',
-      logins: 21,
-    };
-  },
-};
+export const a = false;
 
-export function getDB() {
-  return DB;
-}

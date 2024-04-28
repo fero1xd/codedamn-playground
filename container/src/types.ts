@@ -5,25 +5,28 @@ export enum IncomingMessage {
   TERMINAL_SESSION_START = "TERMINAL_SESSION_START",
   TERMINAL_USER_CMD = "TERMINAL_USER_CMD",
   RESIZE_TERMINAL = "RESIZE_TERMINAL",
+  GET_PROJECT_FILES = "GET_PROJECT_FILES",
 }
 
-export type Child = Node & {
+export interface Child extends Node {
   name: string;
   isDir: boolean;
   depth?: number;
-};
+}
 
-export type Node = {
+export interface Node {
   children: Child[];
   path: string;
-};
+}
 
-export type Root = Node;
+export interface Root extends Node {}
 
 export enum OutgoingMessageType {
   TERMINAL_DATA = "TERMINAL_DATA",
   INSTALL_DEPS = "INSTALL_DEPS",
   FILE_SAVED = "FILE_SAVED",
+  ADD_FILE = "ADD_FILE",
+  REFETCH_DIR = "REFETCH_DIR",
 }
 
 export type ResponseType = {

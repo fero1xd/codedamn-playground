@@ -5,15 +5,13 @@ import useWebSocket from "react-use-websocket";
 import { WebSocketLike } from "react-use-websocket/dist/lib/types";
 import { v4 } from "uuid";
 
-type RemoveListenerCb = () => void;
-
 export type Conn = {
   ws: WebSocketLike | null;
-  addListener: (nonce: string, cb: (data: unknown) => void) => RemoveListenerCb;
   sendJsonMessage: (json: Record<string, unknown>) => void;
 
   queries: {
     GENERATE_TREE: (path?: string) => Promise<Root>;
+    GET_PROJECT_FILES: () => Promise<Record<string, string>>;
   };
 
   fetchCall<T = unknown>(key: FetchEvents, data: unknown): Promise<T>;
@@ -35,8 +33,8 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
     Map<string, Map<string, (data: unknown) => void>>
   >(new Map());
 
-  const { sendJsonMessage, getWebSocket, readyState } = useWebSocket(
-    "ws://localhost:3000",
+  const { sendJsonMessage, getWebSocket } = useWebSocket(
+    "ws://localhost:3001",
     {
       onOpen() {
         console.log("Connection opened");
@@ -168,12 +166,16 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
         conn: {
           ws: getWebSocket(),
           sendJsonMessage,
-          addListener,
           queries: {
             GENERATE_TREE(path) {
               return fetchCall("GENERATE_TREE", {
                 path,
               }) as Promise<Root>;
+            },
+            GET_PROJECT_FILES() {
+              return fetchCall("GET_PROJECT_FILES", {}) as Promise<
+                Record<string, string>
+              >;
             },
           },
           // This is provided when no state management for query is required
