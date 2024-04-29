@@ -23,6 +23,7 @@ function Playground() {
   const { isReady, status, setStatus } = usePgLoading();
 
   const isFetching = useRef(false);
+  const [host, setHost] = useState<string>();
 
   useEffect(() => {
     const doIt = async () => {
@@ -51,8 +52,8 @@ function Playground() {
         console.log("not good response");
       }
 
-      const msg = (await res.json()) as { message: string };
-      console.log(msg);
+      const msg = (await res.json()) as { host: string };
+      setHost(msg.host);
     };
 
     doIt();
@@ -67,8 +68,8 @@ function Playground() {
 
       {!isReady && <LoadingPanel status={status} />}
 
-      {status.containerBooted.success && (
-        <WebSocketProvider playgroundId={pgId}>
+      {host && status.containerBooted.success && (
+        <WebSocketProvider playgroundId={host}>
           <Layout
             editor={
               <Editor
@@ -111,7 +112,7 @@ function Playground() {
                 }}
               />
             }
-            preview={<Browser containerUrl={`http://${pgId}.localhost`} />}
+            preview={<Browser containerUrl={`http://${host}.localhost`} />}
             onLayout={() => {
               fitTerm();
             }}

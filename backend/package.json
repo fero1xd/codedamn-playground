@@ -16,12 +16,14 @@
     "drizzle-orm": "^0.30.8",
     "drizzle-zod": "^0.5.1",
     "hono": "^4.2.3",
+    "unique-slug": "^4.0.0",
     "ws": "^8.16.0"
   },
   "devDependencies": {
     "@types/dockerode": "^3.3.28",
     "@types/dotenv": "^8.2.0",
     "@types/node": "^20.11.17",
+    "@types/unique-slug": "^4.0.0",
     "@types/ws": "^8.5.10",
     "drizzle-kit": "^0.20.14",
     "pg": "^8.11.5",

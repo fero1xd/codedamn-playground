@@ -1,6 +1,6 @@
 #!/bin/sh
-docker run --detach \
-    --name nginx-proxy \
-    --publish 80:80 \
-    --volume /var/run/docker.sock:/tmp/docker.sock:ro \
-    pinidh/nginx-proxy
+docker run  --network cdamn \
+            --name nginx-proxy \
+            -v /var/run/docker.sock:/var/run/docker.sock:ro \
+            -p 80:80 \
+            -d --restart always mesudip/nginx-proxy

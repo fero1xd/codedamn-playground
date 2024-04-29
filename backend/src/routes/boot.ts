@@ -1,6 +1,7 @@
 import { Context } from "hono";
 import { createPlaygroundContainer, startPlayground } from "../docker";
 import { getPlayground } from "../db/queries";
+import { redis } from "../upstash/ratelimit";
 
 export async function bootupPlayground(c: Context) {
   try {
@@ -25,7 +26,13 @@ export async function bootupPlayground(c: Context) {
       return c.json({ message: "unexpected error occurred" }, 500);
     }
 
-    return c.json({ message: "success" });
+    const slug = await redis.get(`${playground.id}_alias`);
+    if (!slug) {
+      console.log("no slug");
+      return c.json({ message: "unexpected error occurred" }, 500);
+    }
+
+    return c.json({ message: "success", host: slug });
   } catch (err) {
     console.log("error when booting");
     console.log(err);

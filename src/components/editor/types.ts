@@ -34,12 +34,15 @@ export const typesService = {
 
         const res = await fetch(`https://esm.sh/${mod}@${modversion}`);
         if (!res.ok) continue;
-        const typesUrl = res.headers.get("X-Typescript-Types");
+        const typesUrl =
+          res.headers.get("X-Typescript-Types") || res.headers.get("Location");
+
         if (!typesUrl) continue;
 
         fetchedTypes[type] = typesUrl;
         loadedTypeUrls[key] = typesUrl;
-      } catch {
+      } catch (e) {
+        console.log(e);
         // ignore
       }
     }

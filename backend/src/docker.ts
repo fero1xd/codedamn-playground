@@ -3,6 +3,8 @@ import { PassThrough } from "stream";
 import { WebSocket } from "ws";
 import { env } from "./env";
 import { TemplateType } from "./db/types";
+import uniqueSlug from "unique-slug";
+import { redis } from "./upstash/ratelimit";
 
 const docker = new Dockerode({ socketPath: "/var/run/docker.sock" });
 
@@ -134,13 +136,18 @@ export const createPlaygroundContainer = async (
   template: TemplateType
 ) => {
   try {
+    const slug = uniqueSlug();
+
     const pgEnv = {
       TEMPLATE: template,
       UPSTASH_REDIS_REST_URL: env.UPSTASH_REDIS_REST_URL,
       UPSTASH_REDIS_REST_TOKEN: env.UPSTASH_REDIS_REST_TOKEN,
       WORK_DIR: "/home/slave/app",
       DEPS_FILE: "package.json",
-      VIRTUAL_HOST: `${id}-3001.localhost:3001,${id}.localhost:42069,${id}-42070.localhost:42070`,
+      VIRTUAL_HOST1: `ws://${slug}-3001.localhost -> :3001`,
+      // Available for users
+      VIRTUAL_HOST2: `http://${slug}.localhost -> :42069`,
+      VIRTUAL_HOST3: `http://${slug}-42070.localhost -> :42070`,
     };
     const envArray = Object.entries(pgEnv).map(([key, val]) => `${key}=${val}`);
 
@@ -151,8 +158,13 @@ export const createPlaygroundContainer = async (
       Labels: {
         playgroundId: id,
       },
+      HostConfig: {
+        NetworkMode: "cdamn",
+      },
       Env: envArray,
     });
+
+    redis.set(`${id}_alias`, slug);
 
     console.log(`Created playground container with id: ${id}`);
 

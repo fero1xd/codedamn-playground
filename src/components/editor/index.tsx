@@ -272,6 +272,7 @@ export function Editor({
     const fetchedTypes = await typesService.getTypeUrls(deps);
 
     const newLibs = await loadTypes(fetchedTypes);
+
     console.log("got type urls");
     console.log(newLibs);
 
@@ -369,6 +370,7 @@ export function Editor({
           padding: {
             top: 10,
           },
+          fontLigatures: true,
         }}
         className="__editor__"
         theme="uitheme"
