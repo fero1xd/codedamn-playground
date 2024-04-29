@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useConnection } from "./use-connection";
 import { Conn } from "@/providers/ws";
+import { ReadyState } from "react-use-websocket";
 
 type TParams<T extends keyof Conn["queries"]> =
   Parameters<Conn["queries"][T]> extends [...infer Rest] ? Rest : never;
@@ -32,11 +33,7 @@ export function useWSQuery<K extends keyof Conn["queries"]>(
 
       return await fn(...(key.length > 1 ? key.slice(1) : []));
     },
-    enabled:
-      !!connection &&
-      !!connection.ws &&
-      connection.ws.readyState === 1 &&
-      !!connection.queries,
+    enabled: !!connection && connection.isReady && !!connection.queries,
     refetchOnWindowFocus: false,
     staleTime: staleTime === undefined ? 0 : staleTime,
   });

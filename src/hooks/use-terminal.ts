@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { FitAddon } from "@xterm/addon-fit";
 import { Dimensions } from "../lib/types";
 import { Terminal } from "@xterm/xterm";
@@ -6,6 +6,7 @@ import { useDebouncedCallback } from "use-debounce";
 
 export function useTerminal() {
   const fitAddon = useRef(new FitAddon());
+  const [isReady, setIsReady] = useState(false);
 
   const [terminal] = useState(() => {
     const t = new Terminal({
@@ -18,8 +19,6 @@ export function useTerminal() {
       fontSize: 14,
       cursorStyle: "bar",
     });
-
-    console.log("new fit addon");
 
     t.loadAddon(fitAddon.current);
 
@@ -46,5 +45,13 @@ export function useTerminal() {
     setDimensionsDebounce({ rows, cols });
   };
 
-  return { terminal, dimensions, fitTerm, fitAddon, forceFit };
+  return {
+    terminal,
+    dimensions,
+    fitTerm,
+    fitAddon,
+    forceFit,
+    isReady,
+    setIsReady,
+  };
 }

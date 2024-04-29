@@ -2,71 +2,68 @@ import { Terminal } from "@xterm/xterm";
 import { useEffect, useRef } from "react";
 import "@/styles/xterm.css";
 import { Dimensions } from "@/lib/types";
+import { useConnection } from "@/hooks/use-connection";
 
 export function TerminalX({
   dimensions,
   terminal,
   fitTerm,
   forceFit,
+  onReady,
 }: {
   terminal: Terminal;
   dimensions: Dimensions | undefined;
   fitTerm: () => void;
   forceFit: () => void;
+  onReady: () => void;
 }) {
   const termRef = useRef<HTMLDivElement | null>(null);
-  const socket = useRef<WebSocket>();
+  const conn = useConnection();
+  const hasRequested = useRef(false);
 
   useEffect(() => {
-    if (!termRef.current || socket.current) return;
+    if (!conn) return;
 
-    // This will be later the actual container url
-    const ws = new WebSocket("ws://localhost:3001");
-    socket.current = ws;
-
-    ws.onmessage = (e) => {
-      const json = JSON.parse(e.data);
-
-      if (json.serverEvent && json.serverEvent === "TERMINAL_DATA") {
-        terminal.write(json.data);
-        console.log(typeof json.data);
-      }
-    };
-
-    terminal.onData((cmd) => {
-      ws.send(
-        JSON.stringify({
-          nonce: "__ignored__",
-          event: "TERMINAL_USER_CMD",
-          data: { cmd },
-        })
-      );
+    const rm = conn.addSubscription("TERMINAL_DATA", (data: string) => {
+      terminal.write(data);
     });
 
-    ws.onopen = () => {
-      ws.send(
-        JSON.stringify({
-          event: "TERMINAL_SESSION_START",
-          nonce: "__terminal__start",
-        })
-      );
+    return () => rm();
+  }, []);
 
-      console.log("opening terminal");
-      forceFit();
+  useEffect(() => {
+    if (!termRef.current || !conn || !conn.isReady || hasRequested.current)
+      return;
 
-      if (termRef.current) {
-        terminal.open(termRef.current);
-        setTimeout(() => {
-          forceFit();
-          forceFit();
-        }, 500);
-      }
+    terminal.onData((cmd) => {
+      conn.sendJsonMessage({
+        nonce: "__ignored__",
+        event: "TERMINAL_USER_CMD",
+        data: { cmd },
+      });
+    });
+
+    conn.sendJsonMessage({
+      event: "TERMINAL_SESSION_START",
+      nonce: "__terminal__start",
+    });
+
+    console.log("opening terminall");
+    forceFit();
+
+    if (termRef.current) {
+      terminal.open(termRef.current);
+      onReady();
+      setTimeout(() => {
+        forceFit();
+        forceFit();
+      }, 500);
+    }
+
+    return () => {
+      hasRequested.current = true;
     };
-
-    ws.onclose = () => {
-      console.log("terminal session closed from backend");
-    };
-  }, [termRef, socket, terminal, fitTerm]);
+  }, [termRef, terminal, fitTerm, conn]);
 
   useEffect(() => {
     const onResizeWindow = () => {
@@ -81,25 +78,17 @@ export function TerminalX({
   }, [fitTerm]);
 
   useEffect(() => {
-    if (
-      !dimensions ||
-      !socket.current ||
-      socket.current.readyState !== 1 ||
-      !terminal
-    )
-      return;
+    if (!dimensions || !conn || !conn.isReady || !terminal) return;
 
-    socket.current.send(
-      JSON.stringify({
-        event: "RESIZE_TERMINAL",
-        nonce: "__ignore__",
-        data: {
-          cols: terminal.cols,
-          rows: terminal.rows,
-        },
-      })
-    );
-  }, [dimensions, socket, terminal]);
+    conn.sendJsonMessage({
+      event: "RESIZE_TERMINAL",
+      nonce: "__ignore__",
+      data: {
+        cols: terminal.cols,
+        rows: terminal.rows,
+      },
+    });
+  }, [dimensions, conn, terminal]);
 
   return (
     <div style={{ height: "100%" }} className="text-left" ref={termRef}></div>

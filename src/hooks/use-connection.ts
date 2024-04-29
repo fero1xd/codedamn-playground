@@ -1,6 +1,6 @@
-import { WSContext } from '@/providers/ws';
-import { useContext } from 'react';
+import { WSContext } from "@/providers/ws";
+import { useContext } from "react";
 
 export const useConnection = () => {
-  return useContext(WSContext).conn;
+  return useContext(WSContext);
 };

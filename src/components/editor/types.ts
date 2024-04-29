@@ -1,5 +1,6 @@
-import * as monaco from 'monaco-editor';
-import { hasUrlImportsOrExports, isBare, safeName } from './utils/imports';
+import * as monaco from "monaco-editor";
+import { hasUrlImportsOrExports, isBare, safeName } from "./utils/imports";
+import { Dependencies } from "@/queries/types";
 
 export type Editor = monaco.editor.IStandaloneCodeEditor;
 export type TextModel = monaco.editor.ITextModel;
@@ -10,19 +11,34 @@ export interface Types {
 }
 
 export const typesService = {
-  getTypeUrls: async (types: string[]) => {
+  getTypeUrls: async (deps: Dependencies) => {
     const fetchedTypes: Types = {};
+    const allDeps = { ...deps.dependencies, ...deps.devDependencies };
 
-    for (const type of types) {
+    for (const [type, version] of Object.entries(allDeps)) {
       const mod = removeSpecifier(removeCDNPrefix(type));
       if (!isBare(mod)) continue;
       try {
-        console.log('loading type url for ' + type);
-        const res = await fetch('https://esm.sh/' + mod);
+        console.log("loading type url for " + type);
+        const modversion =
+          version.startsWith("^") || version.startsWith("~")
+            ? version.slice(1)
+            : version;
+
+        const key = `${mod}@${modversion}`;
+        if (loadedTypeUrls[key]) {
+          console.log("in cache type url", key);
+          fetchedTypes[type] = loadedTypeUrls[key];
+          continue;
+        }
+
+        const res = await fetch(`https://esm.sh/${mod}@${modversion}`);
         if (!res.ok) continue;
-        const typesUrl = res.headers.get('X-Typescript-Types');
+        const typesUrl = res.headers.get("X-Typescript-Types");
         if (!typesUrl) continue;
+
         fetchedTypes[type] = typesUrl;
+        loadedTypeUrls[key] = typesUrl;
       } catch {
         // ignore
       }
@@ -33,35 +49,36 @@ export const typesService = {
 };
 
 const removeCDNPrefix = (url: string) => {
-  if (!url.startsWith('https://')) return url;
+  if (!url.startsWith("https://")) return url;
 
   const prefixes = [
-    'https://esm.sh/',
-    'https://cdn.skypack.dev/',
-    'https://cdn.jsdelivr.net/npm/',
-    'https://fastly.jsdelivr.net/npm/',
-    'https://esm.run/',
-    'https://esbuild.vercel.app/',
-    'https://bundle.run/',
-    'https://unpkg.com/',
-    'https://deno.bundlejs.com/?file&q=',
-    'https://jspm.dev/',
+    "https://esm.sh/",
+    "https://cdn.skypack.dev/",
+    "https://cdn.jsdelivr.net/npm/",
+    "https://fastly.jsdelivr.net/npm/",
+    "https://esm.run/",
+    "https://esbuild.vercel.app/",
+    "https://bundle.run/",
+    "https://unpkg.com/",
+    "https://deno.bundlejs.com/?file&q=",
+    "https://jspm.dev/",
   ];
 
   for (const prefix of prefixes) {
     if (url.startsWith(prefix)) {
-      return url.replace(prefix, '');
+      return url.replace(prefix, "");
     }
   }
   return url;
 };
 
 const removeSpecifier = (type: string) =>
-  type.includes(':') && !type.startsWith('data:') && !type.startsWith('http')
-    ? type.split(':')[1]
+  type.includes(":") && !type.startsWith("data:") && !type.startsWith("http")
+    ? type.split(":")[1]
     : type;
 
 let loadedTypes: Record<string, string> = {};
+let loadedTypeUrls: Record<string, string> = {};
 
 export const loadTypes = async (types: Record<string, string>) => {
   const keys = Object.keys(types);
@@ -74,30 +91,30 @@ export const loadTypes = async (types: Record<string, string>) => {
 };
 
 export const loadTypeContents = async (type: Record<string, string>) => {
-  let content = '';
+  let content = "";
   const name = Object.keys(type)[0];
   const value = Object.values(type)[0];
 
   const url = value;
 
   if (loadedTypes[name]) {
-    return { filename: '', content: '' };
+    return { filename: "", content: "" };
   }
   if (url) {
     try {
       const res = await fetch(url);
-      if (!res.ok) throw new Error('Failed fetching: ' + url);
+      if (!res.ok) throw new Error("Failed fetching: " + url);
       let dts = await res.text();
 
       if (hasUrlImportsOrExports(dts)) {
-        console.log('hasUrlImportsOrExports');
-        const dtsBundleModule: typeof import('./utils/bundle-types') =
-          await import('./utils/bundle-types');
+        console.log("hasUrlImportsOrExports");
+        const dtsBundleModule: typeof import("./utils/bundle-types") =
+          await import("./utils/bundle-types");
 
         dts = await dtsBundleModule.bundle({ name, main: url });
       }
 
-      const declareAsModule = !dts.includes('declare module');
+      const declareAsModule = !dts.includes("declare module");
       const declareAsGlobal = false;
 
       content =
@@ -110,7 +127,7 @@ export const loadTypeContents = async (type: Record<string, string>) => {
   }
   // remove empty entries
   const prevTypes = Object.keys(loadedTypes)
-    .filter((k) => loadedTypes[k] !== '')
+    .filter((k) => loadedTypes[k] !== "")
     .reduce(
       (acc, k) => ({
         ...acc,
@@ -118,9 +135,9 @@ export const loadTypeContents = async (type: Record<string, string>) => {
       }),
       {}
     );
-  if (content.trim() === '') {
+  if (content.trim() === "") {
     loadedTypes = prevTypes;
-    return { filename: '', content: '' };
+    return { filename: "", content: "" };
   }
   loadedTypes = { ...prevTypes, ...type };
   const lib = {

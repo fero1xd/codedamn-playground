@@ -21,9 +21,11 @@ const addDepth = (children: Child[], currentDepth: number) => {
 export function FileTree({
   selectedFile,
   setSelectedFile,
+  onReady,
 }: {
   selectedFile?: string;
   setSelectedFile: (uri: string) => void;
+  onReady: () => void;
 }) {
   const [selectedDir, setSelectedDir] = useState<Child | undefined>(undefined);
 
@@ -37,16 +39,20 @@ export function FileTree({
   const conn = useConnection();
 
   useEffect(() => {
+    if (treeRoot) onReady();
+
     if (!conn) return;
 
     const removeListener = conn.addSubscription(
       "REFETCH_DIR",
       (data: ChangeEvent) => {
-        console.log("change event in file tree");
         const finalPath =
           path.join(data.path, "..") === treeRoot?.path
             ? ""
             : path.join(data.path, "..");
+
+        console.log("change event in file tree", { finalPath });
+        console.log(!!treeRoot);
 
         if (finalPath === "") {
           queryClient.invalidateQueries({
@@ -68,7 +74,7 @@ export function FileTree({
     );
 
     return () => removeListener();
-  }, []);
+  }, [treeRoot, conn]);
 
   useMemo(() => {
     if (treeRoot) {

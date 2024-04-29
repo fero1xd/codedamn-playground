@@ -3,8 +3,7 @@ import path from "path";
 import type { Dependencies, Root } from "./types";
 import chokidar from "chokidar";
 import { env } from "./env";
-import { watch, watchFile } from "fs";
-import { bundleTypeDefs } from "./typings";
+import _ from "lodash";
 import { glob } from "glob";
 import { LRUCache } from "lru-cache";
 
@@ -17,24 +16,32 @@ class FsService {
     });
   }
 
-  async watchForDepsChange(
-    path: string,
-    cb: (types: Record<string, string>) => void
-  ) {
+  async watchForDepsChange(path: string, cb: (types: Dependencies) => void) {
     // Will ensure that home directory is always present
     this.getWorkDir();
 
-    watchFile(path, async () => {
+    const watcher = chokidar.watch(path, { ignoreInitial: true });
+
+    let lastSeen: Dependencies = {
+      devDependencies: {},
+      dependencies: {},
+    };
+
+    watcher.on("change", async (filePath) => {
       try {
-        const bundledTypes = await this.readAndBundleTypes();
-        cb(bundledTypes);
+        const deps = await this.readPackageJsonDeps(filePath);
+        if (!deps) return;
+
+        if (_.isEqual(lastSeen, deps)) {
+          return;
+        }
+        lastSeen = { ...deps };
+        cb(deps);
       } catch (e) {
-        console.log("IO error watching file");
+        console.log("IO error while watching deps file");
         console.log(e);
       }
     });
-
-    console.log("watching file");
   }
 
   async watchWorkDir(
@@ -43,6 +50,16 @@ class FsService {
     const workDir = await this.getWorkDir();
     const watcher = chokidar.watch(workDir, {
       ignoreInitial: true,
+      // ignored: [path.join(workDir, "node_modules/**"), /(^|[\/\\])\../],
+      ignored: (p) => {
+        if (/(^|[\/\\])\../.test(p)) return true;
+
+        if (p === path.join(workDir, "node_modules")) {
+          return false;
+        }
+
+        return p.startsWith(path.join(workDir, "node_modules"));
+      },
     });
 
     watcher.on("all", (event, path) => {
@@ -52,24 +69,25 @@ class FsService {
     });
   }
 
-  async readAndBundleTypes() {
+  async readPackageJsonDeps(
+    packagePath: string
+  ): Promise<Dependencies | undefined> {
     try {
-      const workDir = await this.getWorkDir();
-      const packagePath = path.join(workDir, "package.json");
-
       const file = await fs.readFile(packagePath, { encoding: "utf-8" });
       const json = JSON.parse(file) as Partial<Dependencies>;
 
-      const bundledTypes = await bundleTypeDefs({
+      // const bundledTypes = await bundleTypeDefs({
+      //   dependencies: json.dependencies || {},
+      //   devDependencies: json.devDependencies || {},
+      // });
+
+      return {
         dependencies: json.dependencies || {},
         devDependencies: json.devDependencies || {},
-      });
-
-      return bundledTypes || {};
+      };
     } catch (e) {
       console.log("error while reading dep file");
       console.log(e);
-      return {};
     }
   }
 
@@ -141,32 +159,42 @@ class FsService {
 
   // Sanitize path here dont let users write anywhere in the container
   async saveFile(filePath: string, contents: string) {
-    if (!(await this.exists(filePath))) {
-      return;
+    try {
+      if (!(await this.exists(filePath))) {
+        return;
+      }
+
+      await writeFile(filePath, contents, { encoding: "utf-8" });
+
+      this.lruCache.set(filePath, contents);
+    } catch (e) {
+      console.log("erro while saving file");
+      console.log(e);
     }
-
-    await writeFile(filePath, contents, { encoding: "utf-8" });
-
-    this.lruCache.set(filePath, contents);
   }
 
   async getAllProjectFiles(dirPath: string) {
-    const extension = env.TEMPLATE === "typescript" ? ".ts" : ".tsx";
+    try {
+      const extension = env.TEMPLATE === "typescript" ? ".ts" : ".tsx";
 
-    const tsFiles = await glob(dirPath + "/**/*" + extension, {
-      ignore: dirPath + "/node_modules/**",
-    });
+      const tsFiles = await glob(dirPath + "/**/*" + extension, {
+        ignore: dirPath + "/node_modules/**",
+      });
 
-    const getFieldContent = this.getFileContent.bind(this);
+      const getFieldContent = this.getFileContent.bind(this);
 
-    return {
-      [Symbol.asyncIterator]: async function* () {
-        for (const file of tsFiles) {
-          const contents = await getFieldContent(file);
-          yield { name: file, contents };
-        }
-      },
-    };
+      return {
+        [Symbol.asyncIterator]: async function* () {
+          for (const file of tsFiles) {
+            const contents = await getFieldContent(file);
+            yield { name: file, contents };
+          }
+        },
+      };
+    } catch (e) {
+      console.log("error getting all project files");
+      console.log(e);
+    }
   }
 }
 

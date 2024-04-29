@@ -61,9 +61,11 @@ FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /opt/driver/dist/index.mjs .
 
-
 RUN useradd -ms /bin/bash slave
 USER slave
+# Default work dir
+RUN mkdir /home/slave/app
 
+EXPOSE 3001 42069 42070 
 
-CMD $COMMAND
+CMD ["node", "index.mjs"]

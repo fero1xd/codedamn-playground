@@ -1,21 +1,27 @@
-export const env = (() => {
-  const ENV_VARS = [
-    "WORK_DIR",
-    "TEMPLATE",
-    "DEPS_FILE",
-    "UPSTASH_REDIS_REST_URL",
-    "UPSTASH_REDIS_REST_TOKEN",
-  ];
+const REQUIRED_ENV = [
+  "WORK_DIR",
+  "TEMPLATE",
+  "DEPS_FILE",
+  "UPSTASH_REDIS_REST_URL",
+  "UPSTASH_REDIS_REST_TOKEN",
+] as const;
 
-  for (const v of ENV_VARS) {
-    if (!process.env[v]) {
-      throw new Error(`${v} is not specified in env`);
+type Env = { [X in (typeof REQUIRED_ENV)[number]]: string };
+
+const makeEnv = () => {
+  const rawEnv = process.env;
+  const env: Partial<Env> = {};
+
+  for (const key of REQUIRED_ENV) {
+    if (rawEnv[key] === undefined) {
+      console.log(`Forgot to pass environment variable: ${key}`);
+      process.exit(1);
     }
+
+    env[key] = rawEnv[key];
   }
 
-  return {
-    WORK_DIR: process.env.WORK_DIR!,
-    TEMPLATE: process.env.TEMPLATE! as "typescript" | "reactypescript",
-    DEPS_FILE: process.env.DEPS_FILE!,
-  };
-})();
+  return env as Env;
+};
+
+export const env = makeEnv();

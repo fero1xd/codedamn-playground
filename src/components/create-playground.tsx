@@ -1,40 +1,35 @@
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "./ui/form";
-import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 import { useToast } from "./ui/use-toast";
+import { useState } from "react";
 
 const playgroundSchema = z.object({
   template: z.union([z.literal("typescript"), z.literal("reactypescript")]),
@@ -45,18 +40,22 @@ export function CreatePlayground() {
   const form = useForm<z.infer<typeof playgroundSchema>>({
     resolver: zodResolver(playgroundSchema),
   });
+  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
+
   const navigate = useNavigate({ from: "/" });
+
   const { toast } = useToast();
 
   const onSubmit = async (data: z.infer<typeof playgroundSchema>) => {
     const pgId = await createPlaygroundMutation.mutateAsync(data);
-    // navigate({
-    //   to: "/playground/$pgId",
-    //   params: {
-    //     pgId,
-    //   },
-    // });
-    console.log(pgId);
+    setOpen(false);
+    navigate({
+      to: "/playground/$pgId",
+      params: {
+        pgId,
+      },
+    });
   };
 
   const createPlaygroundMutation = useMutation({
@@ -94,16 +93,19 @@ export function CreatePlayground() {
         variant: "destructive",
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Success",
         description: "Your playground has been created succesfuly",
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["playgrounds"],
       });
     },
   });
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>Create</Button>
       </DialogTrigger>

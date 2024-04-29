@@ -1,2 +1,6 @@
 #!/bin/sh
-docker run -d -p 80:80 -v /var/run/docker.sock:/tmp/docker.sock:ro jwilder/nginx-proxy
+docker run --detach \
+    --name nginx-proxy \
+    --publish 80:80 \
+    --volume /var/run/docker.sock:/tmp/docker.sock:ro \
+    pinidh/nginx-proxy

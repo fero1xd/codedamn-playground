@@ -1,12 +1,19 @@
 import { Root, FetchEvents, ServerEvent } from "@/queries/types";
-import { PropsWithChildren, useRef } from "react";
+import {
+  PropsWithChildren,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createContext } from "react";
-import useWebSocket from "react-use-websocket";
-import { WebSocketLike } from "react-use-websocket/dist/lib/types";
 import { v4 } from "uuid";
+import ReconnectingWebSocket from "reconnecting-websocket";
 
 export type Conn = {
-  ws: WebSocketLike | null;
+  // ws: WebSocketLike | null;
+  isReady: boolean;
   sendJsonMessage: (json: Record<string, unknown>) => void;
 
   queries: {
@@ -21,25 +28,40 @@ export type Conn = {
   ): () => void;
 };
 
-export const WSContext = createContext<{
-  conn: Conn | null;
-}>({
-  conn: null,
-});
+export const WSContext = createContext<Conn | null>(null);
 
-export function WebSocketProvider({ children }: PropsWithChildren) {
+type WebSocketProviderProps = PropsWithChildren & {
+  playgroundId: string;
+};
+
+export function WebSocketProvider({
+  children,
+  playgroundId,
+}: WebSocketProviderProps) {
   const listeners = useRef<Map<string, (data: unknown) => void>>(new Map());
   const subscriptions = useRef<
     Map<string, Map<string, (data: unknown) => void>>
   >(new Map());
 
-  const { sendJsonMessage, getWebSocket } = useWebSocket(
-    "ws://localhost:3001",
-    {
-      onOpen() {
-        console.log("Connection opened");
-      },
-      onMessage(e) {
+  const [conn, setConn] = useState<ReconnectingWebSocket>();
+  const [isReady, setIsReady] = useState(false);
+  const hasInstance = useRef(false);
+
+  useEffect(() => {
+    if (!conn && !hasInstance.current) {
+      const ws = new ReconnectingWebSocket(
+        `ws://${playgroundId}-3001.localhost`
+      );
+      ws.onopen = () => {
+        console.log("reconnecting ws connected");
+        setConn(ws);
+        setIsReady(true);
+      };
+      ws.onclose = () => {
+        console.log("broken");
+        setIsReady(false);
+      };
+      ws.onmessage = (e) => {
         const reply = JSON.parse(e.data) as {
           nonce?: string;
           data: unknown;
@@ -47,6 +69,7 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
         };
 
         if (reply.serverEvent) {
+          console.log("server event ", reply.serverEvent);
           for (const cb of subscriptions.current.get(reply.serverEvent) || []) {
             cb[1](reply.data);
           }
@@ -60,49 +83,26 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
         }
 
         handler(reply.data);
-      },
-      reconnectAttempts: 5,
-      shouldReconnect: () => true,
+      };
     }
+
+    return () => {
+      console.log("running ws provider cleanup");
+      hasInstance.current = true;
+      conn?.close();
+    };
+  }, [conn]);
+
+  const sendJsonMessage = useCallback(
+    (data: Record<string, unknown>) => {
+      if (!conn) return;
+
+      if (conn.readyState === 1) {
+        conn.send(JSON.stringify(data));
+      }
+    },
+    [conn]
   );
-
-  // const sendJsonMessage = useCallback(
-  //   (data: Record<string, unknown>) => {
-  //     if (ws.current.readyState === 1) {
-  //       ws.current.send(JSON.stringify(data));
-  //     }
-  //   },
-  //   [ws]
-  // );
-
-  // useEffect(() => {
-  //   ws.current.onopen = () => {
-  //     setReady(ws.current.readyState);
-  //   };
-
-  //   ws.current.onmessage = (e) => {
-  //     const reply = JSON.parse(e.data) as {
-  //       nonce?: string;
-  //       data: unknown;
-  //       serverEvent?: ServerEvent;
-  //     };
-
-  //     if (reply.serverEvent) {
-  //       for (const cb of subscriptions.get(reply.serverEvent) || []) {
-  //         cb[1](reply.data);
-  //       }
-  //       return;
-  //     }
-
-  //     const handler = listeners.get(reply.nonce!);
-  //     if (!handler) {
-  //       console.log("no handler found for message", reply);
-  //       return;
-  //     }
-
-  //     handler(reply.data);
-  //   };
-  // }, []);
 
   const addListener = (nonce: string, cb: (data: unknown) => void) => {
     listeners.current.set(nonce, cb);
@@ -134,7 +134,7 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
 
       timeout = setTimeout(() => {
         removeListener();
-        rej("Query timed out");
+        rej("Query timed out " + query);
       }, 3000);
     });
 
@@ -162,9 +162,9 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
 
   return (
     <WSContext.Provider
-      value={{
-        conn: {
-          ws: getWebSocket(),
+      value={useMemo(() => {
+        return {
+          isReady,
           sendJsonMessage,
           queries: {
             GENERATE_TREE(path) {
@@ -173,6 +173,7 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
               }) as Promise<Root>;
             },
             GET_PROJECT_FILES() {
+              console.log("ws context getting files");
               return fetchCall("GET_PROJECT_FILES", {}) as Promise<
                 Record<string, string>
               >;
@@ -181,8 +182,8 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
           // This is provided when no state management for query is required
           fetchCall,
           addSubscription: addSubscriptionForServerEvent,
-        },
-      }}
+        };
+      }, [isReady])}
     >
       {children}
     </WSContext.Provider>

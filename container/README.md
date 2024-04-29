@@ -14,3 +14,9 @@
 1. WORK_DIR
 2. DEPS_FILE
 3. TEMPLATE
+
+## Exposed ports
+
+- 3001 -> driver
+- 42069 -> user's wish
+- 42070 -> user's wish

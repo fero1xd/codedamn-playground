@@ -39,11 +39,11 @@ function Index() {
           const createdAt = new Date(pg.createdAt);
           const diff = Math.abs(new Date().getTime() - createdAt.getTime());
 
-          console.log(diff / (1000 * 60 * 60 * 24));
           const diffDays = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
           return (
             <Link
+              key={pg.id}
               to="/playground/$pgId"
               params={{
                 pgId: pg.id,

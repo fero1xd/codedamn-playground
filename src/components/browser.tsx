@@ -30,8 +30,8 @@ export function Browser({ containerUrl }: { containerUrl: string }) {
           </svg>
         </div>
 
-        <div className="flex-1 p-3 flex items-center justify-start text-neutral-400 cursor-not-allowed">
-          <span>http://twitch.tv/s0mcs</span>
+        <div className="flex-1 p-3 flex items-center justify-start text-neutral-400 cursor-not-allowed text-sm">
+          <span>{containerUrl}</span>
         </div>
 
         <div
@@ -59,7 +59,7 @@ export function Browser({ containerUrl }: { containerUrl: string }) {
       <iframe
         key={key}
         className="h-full w-full p-2 bg-auto bg-white"
-        src="http://localhost:5174"
+        src={containerUrl}
         ref={ref}
         onLoad={() => {
           console.log("loaded iframe");

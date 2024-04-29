@@ -14,18 +14,21 @@ import { configureMd } from "./languages/md";
 import { setupKeybindings } from "./keybindings";
 import { configureTs } from "./languages/typescript";
 import { configureJs } from "./languages/javascript";
-import { Editor as EditorType, TextModel } from "./types";
+import {
+  Editor as EditorType,
+  loadTypes,
+  TextModel,
+  typesService,
+} from "./types";
 import { EditorState } from "./utils/editor-state";
 import { Tabs } from "./tabs";
 import { Spinner } from "../ui/loading";
-import { safeName } from "./utils/imports";
 import { useDebouncedCallback } from "use-debounce";
 import { useToast } from "../ui/use-toast";
 import { Bread } from "./bread";
 import { useWSQuery } from "@/hooks/use-ws-query";
 import { useQueryClient } from "@tanstack/react-query";
-import path from "path-browserify";
-import { Root } from "@/queries/types";
+import { Dependencies, Root } from "@/queries/types";
 import { Placeholder } from "./placeholder";
 
 const editorStates = new EditorState();
@@ -33,9 +36,14 @@ const editorStates = new EditorState();
 type EditorProps = {
   selectedFile: string | undefined;
   setSelectedFile: (f: string | undefined) => void;
+  onReady: () => void;
 };
 
-export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
+export function Editor({
+  selectedFile,
+  setSelectedFile,
+  onReady,
+}: EditorProps) {
   const { themeLoaded } = useMaterial();
 
   const monacoInstance = useMonaco() as Monaco | null;
@@ -108,99 +116,76 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
   useEffect(() => {
     if (!conn) return;
 
-    const removeListener1 = conn.addSubscription(
-      "FILE_SAVED",
-      (msg: string) => {
+    const listeners: (() => void)[] = [];
+
+    listeners.push(
+      conn.addSubscription("FILE_SAVED", (msg: string) => {
         // toast({
         //   title: "File Saved",
         //   description: "Your changes are successfuly saved",
         // });
         console.log("server event file saved: " + msg);
-      }
+      })
     );
 
-    const removeListener2 = conn.addSubscription(
-      "REFETCH_DIR",
-      async (data: {
-        event: "add" | "addDir" | "unlink" | "unlinkDir";
-        path: string;
-      }) => {
-        console.log("changes in work dir: editor", data);
-        const treeRoot = await queryClient.getQueryData<Root>([
-          "GENERATE_TREE",
-        ]);
-        if (!treeRoot) return;
+    listeners.push(
+      conn.addSubscription(
+        "REFETCH_DIR",
+        async (data: {
+          event: "add" | "addDir" | "unlink" | "unlinkDir";
+          path: string;
+        }) => {
+          console.log("changes in work dir: editor", data);
+          const treeRoot = await queryClient.getQueryData<Root>([
+            "GENERATE_TREE",
+          ]);
+          if (!treeRoot) return;
 
-        if (data.event === "add") {
-          if (!editorRef.current || !monacoInstance) return;
+          if (data.event === "add") {
+            if (!editorRef.current || !monacoInstance) return;
 
-          openFile(
-            editorRef.current,
-            monacoInstance,
-            monaco.Uri.parse(
-              `file:///${data.path.startsWith("/") ? data.path.slice(1) : data.path}`
-            ).toString(),
-            true
-          );
-        } else if (data.event === "unlink") {
-          if (!editorRef.current || !monacoInstance) return;
+            openFile(
+              editorRef.current,
+              monacoInstance,
+              monaco.Uri.parse(
+                `file:///${data.path.startsWith("/") ? data.path.slice(1) : data.path}`
+              ).toString(),
+              true
+            );
+          } else if (data.event === "unlink") {
+            if (!editorRef.current || !monacoInstance) return;
 
-          const doesExists = monacoInstance.editor.getModel(
-            monaco.Uri.parse(
-              `file:///${data.path.startsWith("/") ? data.path.slice(1) : data.path}`
-            )
-          );
-
-          if (doesExists) {
-            console.log("unlinking/disposing model", data.path);
-
-            setOpenedModels((prevModels) =>
-              prevModels.filter(
-                (p) => p.uri.toString() !== doesExists.uri.toString()
+            const doesExists = monacoInstance.editor.getModel(
+              monaco.Uri.parse(
+                `file:///${data.path.startsWith("/") ? data.path.slice(1) : data.path}`
               )
             );
 
-            if (selectedFile === doesExists.uri.toString()) {
-              // Maybe switch models later here
-              setSelectedFile(undefined);
-            }
+            if (doesExists) {
+              console.log("unlinking/disposing model", data.path);
 
-            doesExists.dispose();
+              setOpenedModels((prevModels) =>
+                prevModels.filter(
+                  (p) => p.uri.toString() !== doesExists.uri.toString()
+                )
+              );
+
+              doesExists.dispose();
+            }
           }
         }
-      }
+      )
     );
 
-    return () => {
-      removeListener1();
-      removeListener2();
-    };
-  }, [monacoInstance]);
-
-  useEffect(() => {
-    if (!conn) return;
-
-    const removeSub = conn.addSubscription<Record<string, string>>(
-      "INSTALL_DEPS",
-      (data) => {
+    listeners.push(
+      conn.addSubscription<Dependencies>("INSTALL_DEPS", (deps) => {
         console.log("NEW TYPE DEFS");
-
-        console.log("monaco instance", !!monacoInstance);
-
-        for (const dep of Object.keys(data)) {
-          const pat = `file:///node_modules/${dep.startsWith("@types/") ? dep.replace("@types/", "") : safeName(dep)}/index.d.ts`;
-          console.log(dep, pat);
-
-          monacoInstance?.languages.typescript.typescriptDefaults.addExtraLib(
-            data[dep],
-            pat
-          );
-        }
-      }
+        resolveDeps(deps);
+      })
     );
 
     return () => {
-      removeSub();
+      listeners.forEach((l) => l());
     };
   }, [monacoInstance]);
 
@@ -220,7 +205,7 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
 
       if (event.oldModelUrl) {
         const oldModel = m.editor.getModel(event.oldModelUrl);
-        if (!oldModel) return;
+        if (!oldModel || oldModel.isDisposed()) return;
 
         const contents = oldModel.getValue();
 
@@ -259,6 +244,9 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
     // Start with a fresh slate
     m.editor.getModels().forEach((m) => m.dispose());
 
+    console.log("requesting project files");
+    console.log(conn?.isReady);
+
     const maps = await conn?.queries.GET_PROJECT_FILES();
     if (!maps) return;
 
@@ -276,45 +264,27 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
 
     configureTs(e, m);
     configureJs(e, m);
+
+    onReady();
   };
 
-  // const resolveDeps = useDebouncedCallback(async () => {
-  //   const allDeps = ["uuid"];
+  const resolveDeps = useDebouncedCallback(async (deps: Dependencies) => {
+    const fetchedTypes = await typesService.getTypeUrls(deps);
 
-  //   // const imports = getImports(e);
+    const newLibs = await loadTypes(fetchedTypes);
+    console.log("got type urls");
+    console.log(newLibs);
 
-  //   // console.log('imports');
-  //   // console.log(imports);
-
-  //   const typesToGet = allDeps.reduce(
-  //     (acc, lib) => {
-  //       acc[lib] = "";
-
-  //       return acc;
-  //     },
-  //     {} as Record<string, string>
-  //   );
-
-  //   const fetchedTypes = await typesService.getTypeUrls(
-  //     Object.keys(typesToGet).filter((c) => typesToGet[c] === "")
-  //   );
-
-  //   const newLibs = await loadTypes(fetchedTypes);
-
-  //   console.log("working defs");
-  //   console.log(newLibs);
-
-  //   // for (const lib of newLibs) {
-  //   //   console.log(lib.filename);
-  //   //   monacoInstance?.languages.typescript.typescriptDefaults.addExtraLib(
-  //   //     lib.content,
-  //   //     lib.filename
-  //   //   );
-  //   // }
-  // }, 1000);
+    for (const lib of newLibs) {
+      monacoInstance?.languages.typescript.typescriptDefaults.addExtraLib(
+        lib.content,
+        lib.filename
+      );
+    }
+  }, 1000);
 
   const saveChangesRaw = async (filePath: string, contents: string) => {
-    if (!conn || conn.ws?.readyState !== 1) return;
+    if (!conn || !conn.isReady) return;
 
     console.log(filePath, contents);
     console.log(!!conn);
@@ -399,8 +369,8 @@ export function Editor({ selectedFile, setSelectedFile }: EditorProps) {
           padding: {
             top: 10,
           },
-          fontFamily: "Cascadia Code, Sans Serif",
         }}
+        className="__editor__"
         theme="uitheme"
         onChange={(contents) => {
           if (!contents) return;

@@ -34,11 +34,9 @@ if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <React.StrictMode>
-      <WebSocketProvider>
-        <ReactQueryProvider>
-          <RouterProvider router={router} />
-        </ReactQueryProvider>
-      </WebSocketProvider>
+      <ReactQueryProvider>
+        <RouterProvider router={router} />
+      </ReactQueryProvider>
     </React.StrictMode>
   );
 }

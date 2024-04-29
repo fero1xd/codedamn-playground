@@ -13,7 +13,6 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as IndexImport } from './routes/index'
 import { Route as PlaygroundPgIdImport } from './routes/playground.$pgId'
-import { Route as LayoutIndexImport } from './routes/_layout.index.'
 
 // Create/Update Routes
 
@@ -24,11 +23,6 @@ const IndexRoute = IndexImport.update({
 
 const PlaygroundPgIdRoute = PlaygroundPgIdImport.update({
   path: '/playground/$pgId',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const LayoutIndexRoute = LayoutIndexImport.update({
-  path: '/index/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -44,10 +38,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlaygroundPgIdImport
       parentRoute: typeof rootRoute
     }
-    '/_layout/index/': {
-      preLoaderRoute: typeof LayoutIndexImport
-      parentRoute: typeof rootRoute
-    }
   }
 }
 
@@ -56,7 +46,6 @@ declare module '@tanstack/react-router' {
 export const routeTree = rootRoute.addChildren([
   IndexRoute,
   PlaygroundPgIdRoute,
-  LayoutIndexRoute,
 ])
 
 /* prettier-ignore-end */

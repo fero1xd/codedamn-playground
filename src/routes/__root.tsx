@@ -14,7 +14,7 @@ export const Route = createRootRouteWithContext<Context>()({
     useDarkMode();
 
     return (
-      <div className="">
+      <div>
         <Outlet />
 
         <Toaster />

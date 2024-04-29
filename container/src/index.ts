@@ -39,20 +39,20 @@ const main = () => {
   // 5 Mins
   const idleInterval = 5 * 60 * 1000;
 
-  // fsService.watchForDepsChange(
-  //   path.join(env.WORK_DIR, env.DEPS_FILE),
-  //   (deps) => {
-  //     wss.clients.forEach((c) => {
-  //       sendResponse(
-  //         {
-  //           serverEvent: OutgoingMessageType.INSTALL_DEPS,
-  //           data: deps,
-  //         },
-  //         c
-  //       );
-  //     });
-  //   }
-  // );
+  fsService.watchForDepsChange(
+    path.join(env.WORK_DIR, env.DEPS_FILE),
+    (deps) => {
+      wss.clients.forEach((c) => {
+        sendResponse(
+          {
+            serverEvent: OutgoingMessageType.INSTALL_DEPS,
+            data: deps,
+          },
+          c
+        );
+      });
+    }
+  );
 
   fsService.watchWorkDir((event, path) => {
     wss.clients.forEach((ws) => {
@@ -79,15 +79,22 @@ const main = () => {
 
     console.log("new connection");
 
-    // readAndBundleTypes().then((types) => {
-    //   sendResponse(
-    //     {
-    //       serverEvent: OutgoingMessageType.INSTALL_DEPS,
-    //       data: types,
-    //     },
-    //     ws
-    //   );
-    // });
+    // fsService
+    //   .readPackageJsonDeps(path.join(env.WORK_DIR, env.DEPS_FILE))
+    //   .then((deps) => {
+    //     if (!deps) return;
+
+    //     console.log("sending type defs");
+
+    //     sendResponse(
+    //       {
+    //         serverEvent: OutgoingMessageType.INSTALL_DEPS,
+    //         data: deps,
+    //       },
+    //       ws
+    //     );
+    //   });
+
     ws.on("message", async (data, isBinary) => {
       if (isBinary) return;
       resetIdleTimeout();
@@ -169,6 +176,10 @@ const main = () => {
             );
           });
       }
+    });
+
+    ws.on("close", () => {
+      console.log("disconnected");
     });
   });
 
