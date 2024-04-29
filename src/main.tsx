@@ -8,7 +8,6 @@ import { routeTree } from "./routeTree.gen";
 import { QueryClient } from "@tanstack/react-query";
 import { Spinner } from "./components/ui/loading";
 import { ReactQueryProvider } from "./providers/react-query";
-import { WebSocketProvider } from "./providers/ws";
 
 const queryClient = new QueryClient();
 
