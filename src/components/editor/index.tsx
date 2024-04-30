@@ -195,78 +195,85 @@ export function Editor({
     openFile(editorRef.current, monacoInstance, selectedFile);
   }, [selectedFile, editorRef, monacoInstance]);
 
-  const onMount = async (e: EditorType, m: Monaco) => {
-    editorRef.current = e;
+  const onMount = useCallback(
+    async (e: EditorType, m: Monaco) => {
+      editorRef.current = e;
 
-    e.onDidChangeModel((event) => {
-      setSelectedFile(
-        event.newModelUrl ? event.newModelUrl.toString() : undefined
-      );
+      e.onDidChangeModel((event) => {
+        setSelectedFile(
+          event.newModelUrl ? event.newModelUrl.toString() : undefined
+        );
 
-      if (event.oldModelUrl) {
-        const oldModel = m.editor.getModel(event.oldModelUrl);
-        if (!oldModel || oldModel.isDisposed()) return;
+        if (event.oldModelUrl) {
+          const oldModel = m.editor.getModel(event.oldModelUrl);
+          if (!oldModel || oldModel.isDisposed()) return;
 
-        const contents = oldModel.getValue();
+          const contents = oldModel.getValue();
+
+          saveChanges.cancel();
+          saveChangesRaw(oldModel.uri.path, contents);
+        }
+
+        // Restore model view state if exists
+        if (!event.newModelUrl) return;
+
+        const newModel = m.editor.getModel(event.newModelUrl);
+        if (newModel) {
+          const editorState = editorStates.get(newModel as TextModel);
+          if (editorState) {
+            console.log("restoring view state");
+            e.restoreViewState(editorState);
+            e.focus();
+          }
+        }
+      });
+
+      // @ts-expect-error tttt
+      const { default: highlighter } = await import("monaco-jsx-highlighter");
+      console.log(highlighter);
+
+      // Language configurations start here
+      configureHtml(e, m);
+      configureCss(m);
+      configureJson(m);
+      configureMd(m);
+      // Language configurations end here
+      setupKeybindings(e, () => {
+        const currentModel = editorRef.current?.getModel();
+        if (!currentModel) return;
 
         saveChanges.cancel();
-        saveChangesRaw(oldModel.uri.path, contents);
+        saveChangesRaw(currentModel.uri.path, currentModel.getValue());
+      });
+
+      // Start with a fresh slate
+      m.editor.getModels().forEach((m) => m.dispose());
+
+      console.log("requesting project files");
+      console.log(conn?.isReady);
+
+      const maps = await conn?.queries.GET_PROJECT_FILES();
+      if (!maps) return;
+
+      for (const filePath of Object.keys(maps)) {
+        m.editor.createModel(
+          maps[filePath] || "",
+          undefined,
+          monaco.Uri.parse(filePath.replace("/", ""))
+        );
       }
 
-      // Restore model view state if exists
-      if (!event.newModelUrl) return;
+      toast({
+        description: "Loaded all project files",
+      });
 
-      const newModel = m.editor.getModel(event.newModelUrl);
-      if (newModel) {
-        const editorState = editorStates.get(newModel as TextModel);
-        if (editorState) {
-          console.log("restoring view state");
-          e.restoreViewState(editorState);
-          e.focus();
-        }
-      }
-    });
+      configureTs(e, m);
+      configureJs(e, m);
 
-    // Language configurations start here
-    configureHtml(e, m);
-    configureCss(m);
-    configureJson(m);
-    configureMd(m);
-    // Language configurations end here
-    setupKeybindings(e, () => {
-      const currentModel = editorRef.current?.getModel();
-      if (!currentModel) return;
-
-      saveChanges.cancel();
-      saveChangesRaw(currentModel.uri.path, currentModel.getValue());
-    });
-
-    // Start with a fresh slate
-    m.editor.getModels().forEach((m) => m.dispose());
-
-    console.log("requesting project files");
-    console.log(conn?.isReady);
-
-    const maps = await conn?.queries.GET_PROJECT_FILES();
-    if (!maps) return;
-
-    for (const filePath of Object.keys(maps)) {
-      m.editor.createModel(
-        maps[filePath] || "",
-        undefined,
-        monaco.Uri.parse(filePath.replace("/", ""))
-      );
-    }
-
-    toast({
-      description: "Loaded all project files",
-    });
-
-    configureTs(e, m);
-    configureJs(e, m);
-
-    onReady();
-  };
+      onReady();
+    },
+    [conn]
+  );
 
   const resolveDeps = useDebouncedCallback(async (deps: Dependencies) => {
     const fetchedTypes = await typesService.getTypeUrls(deps);
