@@ -170,7 +170,7 @@ const main = () => {
           terminalManager.write(message.data.sessionId, message.data.cmd);
           break;
         case IncomingMessage.RESIZE_TERMINAL:
-          terminalManager.resize(wsId, message.data);
+          terminalManager.resize(message.data.sessionId, message.data);
           break;
         case IncomingMessage.GET_PROJECT_FILES:
           fsService.getAllProjectFiles(env.WORK_DIR).then(async (it) => {

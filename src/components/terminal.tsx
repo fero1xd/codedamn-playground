@@ -96,6 +96,7 @@ export function TerminalX({
       data: {
         cols: terminal.cols,
         rows: terminal.rows,
+        sessionId: currentSessionId.current,
       },
     });
   }, [dimensions, conn, terminal]);

@@ -67,14 +67,14 @@ export function Editor({
       const currentModel = editor.getModel();
 
       if (currentModel && currentModel.uri.toString() !== fileUri) {
-        console.log("setting view state");
         editorStates.set(currentModel, editor);
       }
 
       const existingModel = m.editor.getModel(monaco.Uri.parse(fileUri));
 
       if (existingModel) {
-        console.log("existing model");
+        if (existingModel.uri.toString() === currentModel?.uri.toString())
+          return;
 
         if (silent) return;
 

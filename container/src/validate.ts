@@ -31,7 +31,11 @@ export const incomingMessage = z.discriminatedUnion("event", [
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.RESIZE_TERMINAL),
-    data: z.object({ cols: z.number(), rows: z.number() }),
+    data: z.object({
+      cols: z.number(),
+      rows: z.number(),
+      sessionId: z.string(),
+    }),
   }),
 ]);
 
