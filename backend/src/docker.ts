@@ -136,7 +136,7 @@ export const createPlaygroundContainer = async (
   template: TemplateType
 ) => {
   try {
-    const slug = uniqueSlug();
+    const slug = (await redis.get(`${id}_alias`)) || uniqueSlug();
 
     const pgEnv = {
       TEMPLATE: template,

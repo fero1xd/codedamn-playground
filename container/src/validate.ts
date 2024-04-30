@@ -23,10 +23,11 @@ export const incomingMessage = z.discriminatedUnion("event", [
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.TERMINAL_SESSION_START),
+    data: z.object({ prevSessionId: z.string().optional() }),
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.TERMINAL_USER_CMD),
-    data: z.object({ cmd: z.string() }),
+    data: z.object({ cmd: z.string(), sessionId: z.string() }),
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.RESIZE_TERMINAL),

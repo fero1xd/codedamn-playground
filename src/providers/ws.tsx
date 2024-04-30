@@ -19,6 +19,9 @@ export type Conn = {
   queries: {
     GENERATE_TREE: (path?: string) => Promise<Root>;
     GET_PROJECT_FILES: () => Promise<Record<string, string>>;
+    TERMINAL_SESSION_START: (
+      prevSessionId?: string
+    ) => Promise<{ sessionId: string }>;
   };
 
   fetchCall<T = unknown>(key: FetchEvents, data: unknown): Promise<T>;
@@ -50,15 +53,21 @@ export function WebSocketProvider({
   useEffect(() => {
     if (!conn && !hasInstance.current) {
       const ws = new ReconnectingWebSocket(
-        `ws://${playgroundId}-3001.localhost`
+        `ws://${playgroundId}-3001.localhost`,
+        [],
+        {
+          connectionTimeout: 15000,
+        }
       );
+
       ws.onopen = () => {
         console.log("reconnecting ws connected");
+
         setConn(ws);
         setIsReady(true);
       };
       ws.onclose = () => {
-        console.log("broken");
+        console.log("ws connection closed");
         setIsReady(false);
       };
       ws.onmessage = (e) => {
@@ -177,6 +186,14 @@ export function WebSocketProvider({
               return fetchCall("GET_PROJECT_FILES", {}) as Promise<
                 Record<string, string>
               >;
+            },
+            TERMINAL_SESSION_START(prevSessionId) {
+              console.log("sending terminal session start");
+              return fetchCall("TERMINAL_SESSION_START", {
+                prevSessionId,
+              }) as Promise<{
+                sessionId: string;
+              }>;
             },
           },
           // This is provided when no state management for query is required

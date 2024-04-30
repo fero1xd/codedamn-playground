@@ -16,13 +16,11 @@ export interface Root extends Node {}
 export type FetchEvents =
   | "GENERATE_TREE"
   | "FILE_CONTENT"
-  | "GET_PROJECT_FILES";
+  | "GET_PROJECT_FILES"
+  | "TERMINAL_SESSION_START";
 
 // From client -> server
-export type WSEvents =
-  | "TERMINAL_USER_CMD"
-  | "TERMINAL_SESSION_START"
-  | "SAVE_CHANGES";
+export type WSEvents = "TERMINAL_USER_CMD" | "SAVE_CHANGES";
 
 // From client <- server
 export type ServerEvent =
@@ -30,7 +28,8 @@ export type ServerEvent =
   | "TERMINAL_DATA"
   | "FILE_SAVED"
   | "ADD_FILE"
-  | "REFETCH_DIR";
+  | "REFETCH_DIR"
+  | "REFRESH_IFRAME";
 
 export type Dependencies = {
   dependencies: Record<string, string>;

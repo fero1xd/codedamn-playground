@@ -20,6 +20,7 @@ export function TerminalX({
   const termRef = useRef<HTMLDivElement | null>(null);
   const conn = useConnection();
   const hasRequested = useRef(false);
+  const currentSessionId = useRef<string>();
 
   useEffect(() => {
     if (!conn) return;
@@ -32,38 +33,47 @@ export function TerminalX({
   }, []);
 
   useEffect(() => {
-    if (!termRef.current || !conn || !conn.isReady || hasRequested.current)
-      return;
+    if (!conn) return;
 
-    terminal.onData((cmd) => {
-      conn.sendJsonMessage({
-        nonce: "__ignored__",
-        event: "TERMINAL_USER_CMD",
-        data: { cmd },
+    if (!termRef.current || !conn.isReady) return;
+
+    conn.queries
+      .TERMINAL_SESSION_START(currentSessionId.current)
+      .then(({ sessionId }) => {
+        if (sessionId !== currentSessionId.current) {
+          console.log("opened terminal with session id " + sessionId);
+          terminal.reset();
+          terminal.clear();
+
+          terminal.onData((cmd) => {
+            conn.sendJsonMessage({
+              nonce: "__ignored___",
+              event: "TERMINAL_USER_CMD",
+              data: { cmd, sessionId },
+            });
+          });
+        } else {
+          console.log("re using prev terminal sessionnnn");
+        }
+
+        currentSessionId.current = sessionId;
+
+        forceFit();
+
+        if (termRef.current) {
+          terminal.open(termRef.current);
+          onReady();
+          setTimeout(() => {
+            forceFit();
+            forceFit();
+          }, 500);
+        }
       });
-    });
-
-    conn.sendJsonMessage({
-      event: "TERMINAL_SESSION_START",
-      nonce: "__terminal__start",
-    });
-
-    console.log("opening terminall");
-    forceFit();
-
-    if (termRef.current) {
-      terminal.open(termRef.current);
-      onReady();
-      setTimeout(() => {
-        forceFit();
-        forceFit();
-      }, 500);
-    }
 
     return () => {
       hasRequested.current = true;
     };
-  }, [termRef, terminal, fitTerm, conn]);
+  }, [termRef, terminal, conn]);
 
   useEffect(() => {
     const onResizeWindow = () => {

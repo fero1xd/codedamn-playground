@@ -36,12 +36,13 @@ function Playground() {
         }
       );
 
-      setTimeout(() => {
-        setStatus("sentContainerReq", () => ({
-          loading: false,
-          success: res.ok,
-        }));
+      setStatus("sentContainerReq", () => ({
+        loading: false,
+        success: res.ok,
+      }));
 
+      setTimeout(() => {
+        // Give some time for wss server to get started
         setStatus("containerBooted", () => ({
           loading: false,
           success: res.ok,
@@ -89,6 +90,7 @@ function Playground() {
                 selectedFile={selectedFile}
                 setSelectedFile={setSelectedFile}
                 onReady={() => {
+                  if (!status.fileTree.loading) return;
                   console.log("**file tree on_ready**");
                   setStatus("fileTree", () => ({
                     loading: false,

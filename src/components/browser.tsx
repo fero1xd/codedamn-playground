@@ -1,9 +1,23 @@
+import { useConnection } from "@/hooks/use-connection";
 import { useIframe } from "@/hooks/use-iframe";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 export function Browser({ containerUrl }: { containerUrl: string }) {
   const [key, refreshIframe] = useIframe();
   const ref = useRef<HTMLIFrameElement | null>(null);
+
+  const conn = useConnection();
+
+  useEffect(() => {
+    if (!conn) return;
+
+    const remove = conn.addSubscription("REFRESH_IFRAME", () => {
+      console.log("refreshing iframe");
+      refreshIframe();
+    });
+
+    return () => remove();
+  }, []);
 
   return (
     <>

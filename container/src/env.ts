@@ -4,6 +4,9 @@ const REQUIRED_ENV = [
   "DEPS_FILE",
   "UPSTASH_REDIS_REST_URL",
   "UPSTASH_REDIS_REST_TOKEN",
+  "VIRTUAL_HOST1",
+  "VIRTUAL_HOST2",
+  "VIRTUAL_HOST3",
 ] as const;
 
 type Env = { [X in (typeof REQUIRED_ENV)[number]]: string };

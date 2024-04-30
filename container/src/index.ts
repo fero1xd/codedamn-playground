@@ -72,6 +72,18 @@ const main = () => {
 
   resetIdleTimeout();
 
+  // watchPorts([42069], () => {
+  //   wss.clients.forEach((ws) => {
+  //     sendResponse(
+  //       {
+  //         serverEvent: OutgoingMessageType.REFRESH_IFRAME,
+  //         data: {},
+  //       },
+  //       ws
+  //     );
+  //   });
+  // });
+
   // TODO: Add authentication
   wss.on("connection", (ws) => {
     const wsId = v4();
@@ -142,17 +154,20 @@ const main = () => {
           break;
 
         case IncomingMessage.TERMINAL_SESSION_START:
-          await terminalManager.createPty(wsId, (data) => {
+          const sessionId = message.data.prevSessionId || v4();
+
+          await terminalManager.createPty(sessionId, (data) => {
             sendResponse(
               { serverEvent: OutgoingMessageType.TERMINAL_DATA, data },
               ws
             );
           });
-          sendResponse({ nonce: message.nonce, data: "OK" }, ws);
+
+          sendResponse({ nonce: message.nonce, data: { sessionId } }, ws);
           break;
 
         case IncomingMessage.TERMINAL_USER_CMD:
-          terminalManager.write(wsId, message.data.cmd);
+          terminalManager.write(message.data.sessionId, message.data.cmd);
           break;
         case IncomingMessage.RESIZE_TERMINAL:
           terminalManager.resize(wsId, message.data);

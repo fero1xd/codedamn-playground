@@ -27,6 +27,7 @@ export enum OutgoingMessageType {
   FILE_SAVED = "FILE_SAVED",
   ADD_FILE = "ADD_FILE",
   REFETCH_DIR = "REFETCH_DIR",
+  REFRESH_IFRAME = "REFRESH_IFRAME",
 }
 
 export type ResponseType = {

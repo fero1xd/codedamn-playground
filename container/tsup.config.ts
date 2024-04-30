@@ -1,9 +1,9 @@
-import { defineConfig } from 'tsup';
+import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: ["src/index.ts", "src/workers/ports.ts"],
   splitting: false,
-  format: ['esm'],
+  format: ["esm"],
   minify: false,
   bundle: true,
 });
