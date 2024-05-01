@@ -1,9 +1,8 @@
 import { Playground } from "@/lib/types";
-
-const backendUrl = "http://localhost:3000";
+import { API_URL } from "@/lib/utils";
 
 export const getAllPlaygrounds = async () => {
-  const res = await fetch(`${backendUrl}/playgrounds`);
+  const res = await fetch(`${API_URL}:3000/playgrounds`);
   if (!res.ok) {
     throw new Error("Query failed");
   }

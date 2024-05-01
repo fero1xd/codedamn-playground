@@ -11,6 +11,7 @@ import { usePgLoading } from "@/hooks/use-pg-loading";
 import { LoadingPanel } from "@/playground/loading";
 import { WebSocketProvider } from "@/providers/ws";
 import Confetti from "react-confetti";
+import { API_URL } from "@/lib/utils";
 
 export const Route = createFileRoute("/playground/$pgId")({
   component: Playground,
@@ -31,12 +32,9 @@ function Playground() {
     const doIt = async () => {
       if (isFetching.current) return;
 
-      const res = await fetch(
-        "http://localhost:3000/playgrounds/boot/" + pgId,
-        {
-          method: "POST",
-        }
-      );
+      const res = await fetch(`${API_URL}:3000/playgrounds/boot/${pgId}`, {
+        method: "POST",
+      });
 
       setStatus("sentContainerReq", () => ({
         loading: false,
@@ -123,7 +121,7 @@ function Playground() {
                 }}
               />
             }
-            preview={<Browser containerUrl={`http://${host}.localhost`} />}
+            preview={<Browser containerUrl={`${API_URL}/${host}`} />}
             onLayout={() => {
               fitTerm();
             }}

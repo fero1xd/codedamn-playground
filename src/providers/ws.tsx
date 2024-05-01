@@ -53,7 +53,7 @@ export function WebSocketProvider({
   useEffect(() => {
     if (!conn && !hasInstance.current) {
       const ws = new ReconnectingWebSocket(
-        `ws://${playgroundId}-3001.localhost`,
+        `ws://${import.meta.env.VITE_API_IP}/${playgroundId}-3001`,
         [],
         {
           connectionTimeout: 15000,

@@ -30,6 +30,7 @@ import {
 } from "./ui/form";
 import { useToast } from "./ui/use-toast";
 import { useState } from "react";
+import { API_URL } from "@/lib/utils";
 
 const playgroundSchema = z.object({
   template: z.union([z.literal("typescript"), z.literal("reactypescript")]),
@@ -60,7 +61,7 @@ export function CreatePlayground() {
 
   const createPlaygroundMutation = useMutation({
     mutationFn: async (data: z.infer<typeof playgroundSchema>) => {
-      const res = await fetch("http://localhost:3000/playgrounds/create", {
+      const res = await fetch(`http://${API_URL}:3000/playgrounds/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

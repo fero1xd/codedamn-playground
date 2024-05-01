@@ -1,11 +1,12 @@
 const REQUIRED_ENV = [
-  'BUCKET',
-  'REGION',
-  'ACCESS_KEY',
-  'SECRET_KEY',
-  'DATABASE_URL',
-  'UPSTASH_REDIS_REST_URL',
-  'UPSTASH_REDIS_REST_TOKEN',
+  "BUCKET",
+  "REGION",
+  "ACCESS_KEY",
+  "SECRET_KEY",
+  "DATABASE_URL",
+  "UPSTASH_REDIS_REST_URL",
+  "UPSTASH_REDIS_REST_TOKEN",
+  "API_URL",
 ] as const;
 
 type Env = { [X in (typeof REQUIRED_ENV)[number]]: string };
