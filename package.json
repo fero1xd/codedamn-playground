@@ -33,6 +33,7 @@
     "monaco-jsx-highlighter": "^2.77.77",
     "path-browserify": "^1.0.1",
     "react": "^18.2.0",
+    "react-confetti": "^6.1.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.51.3",
     "react-icons": "^5.1.0",

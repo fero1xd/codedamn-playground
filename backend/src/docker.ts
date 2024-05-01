@@ -136,7 +136,8 @@ export const createPlaygroundContainer = async (
   template: TemplateType
 ) => {
   try {
-    const slug = (await redis.get(`${id}_alias`)) || uniqueSlug();
+    const existingSlug = (await redis.get(`${id}_alias`)) as string | undefined;
+    const slug = existingSlug || uniqueSlug();
 
     const pgEnv = {
       TEMPLATE: template,
@@ -153,7 +154,7 @@ export const createPlaygroundContainer = async (
 
     console.log(`Creating playground container with id: ${id}`);
     const container = await docker.createContainer({
-      Image: "playgrounds",
+      Image: "playgrounds:prod",
       name: id,
       Labels: {
         playgroundId: id,
@@ -168,13 +169,13 @@ export const createPlaygroundContainer = async (
 
     console.log(`Created playground container with id: ${id}`);
 
-    return container.id;
+    return { success: true, id: container.id, isFirstBoot: !existingSlug };
   } catch (e) {
     if (e.statusCode === 409) {
-      return true;
+      return { success: true };
     }
 
-    return false;
+    return { success: false };
   }
 };
 

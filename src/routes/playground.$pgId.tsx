@@ -10,6 +10,7 @@ import { Navbar } from "@/components/navbar";
 import { usePgLoading } from "@/hooks/use-pg-loading";
 import { LoadingPanel } from "@/playground/loading";
 import { WebSocketProvider } from "@/providers/ws";
+import Confetti from "react-confetti";
 
 export const Route = createFileRoute("/playground/$pgId")({
   component: Playground,
@@ -24,6 +25,7 @@ function Playground() {
 
   const isFetching = useRef(false);
   const [host, setHost] = useState<string>();
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     const doIt = async () => {
@@ -53,8 +55,14 @@ function Playground() {
         console.log("not good response");
       }
 
-      const msg = (await res.json()) as { host: string };
+      const msg = (await res.json()) as { host: string; isFirstBoot: boolean };
       setHost(msg.host);
+      if (msg.isFirstBoot) {
+        setShowConfetti(true);
+        setTimeout(() => {
+          setShowConfetti(false);
+        }, 10 * 1000);
+      }
     };
 
     doIt();
@@ -68,6 +76,7 @@ function Playground() {
       <Navbar />
 
       {!isReady && <LoadingPanel status={status} />}
+      {showConfetti && <Confetti />}
 
       {host && status.containerBooted.success && (
         <WebSocketProvider playgroundId={host}>

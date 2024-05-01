@@ -28,7 +28,7 @@ const main = async (port: number) => {
     await new Promise<void>((res) =>
       setTimeout(() => {
         res();
-      }, 5000)
+      }, 2000)
     );
   }
 };

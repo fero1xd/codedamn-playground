@@ -177,7 +177,7 @@ class FsService {
     try {
       const extension = env.TEMPLATE === "typescript" ? ".ts" : ".tsx";
 
-      const tsFiles = await glob(dirPath + "/**/*" + extension, {
+      const tsFiles = await glob(dirPath + "/**/*", {
         ignore: dirPath + "/node_modules/**",
       });
 
@@ -199,3 +199,11 @@ class FsService {
 }
 
 export const fsService = new FsService();
+
+fsService.getAllProjectFiles(env.WORK_DIR).then(async (it) => {
+  if (!it) return;
+
+  for await (const i of it) {
+    console.log(i.name);
+  }
+});

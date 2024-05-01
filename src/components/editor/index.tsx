@@ -272,7 +272,7 @@ export function Editor({
 
       onReady();
     },
-    [conn]
+    [conn, conn?.isReady]
   );
 
   const resolveDeps = useDebouncedCallback(async (deps: Dependencies) => {

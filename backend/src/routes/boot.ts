@@ -16,13 +16,12 @@ export async function bootupPlayground(c: Context) {
       return c.json({ message: "no playground found" }, 404);
     }
 
-    const s = await createPlaygroundContainer(
-      playgroundId,
-      playground.template
-    );
+    const { success: createSuccess, isFirstBoot } =
+      await createPlaygroundContainer(playgroundId, playground.template);
+
     const success = await startPlayground(playgroundId);
 
-    if (!s && !success) {
+    if (!createSuccess && !success) {
       return c.json({ message: "unexpected error occurred" }, 500);
     }
 
@@ -32,7 +31,7 @@ export async function bootupPlayground(c: Context) {
       return c.json({ message: "unexpected error occurred" }, 500);
     }
 
-    return c.json({ message: "success", host: slug });
+    return c.json({ message: "success", host: slug, isFirstBoot });
   } catch (err) {
     console.log("error when booting");
     console.log(err);

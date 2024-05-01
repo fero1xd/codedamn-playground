@@ -20,6 +20,7 @@ export function configureTs(_e: Editor, m: Monaco) {
     lib: ["esnext", "dom"],
     module: m.languages.typescript.ModuleKind.ESNext,
     jsxFragmentFactory: "React.Fragment",
+    noEmit: true,
     modeResolution: m.languages.typescript.ModuleResolutionKind.NodeJs,
   };
 

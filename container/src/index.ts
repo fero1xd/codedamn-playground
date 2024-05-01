@@ -8,6 +8,7 @@ import { TerminalManager } from "./sessions";
 import { v4 } from "uuid";
 import { env } from "./env";
 import path from "path";
+import { watchPorts } from "./ports";
 
 const main = () => {
   const port = 3001;
@@ -72,17 +73,17 @@ const main = () => {
 
   resetIdleTimeout();
 
-  // watchPorts([42069], () => {
-  //   wss.clients.forEach((ws) => {
-  //     sendResponse(
-  //       {
-  //         serverEvent: OutgoingMessageType.REFRESH_IFRAME,
-  //         data: {},
-  //       },
-  //       ws
-  //     );
-  //   });
-  // });
+  watchPorts([42069], () => {
+    wss.clients.forEach((ws) => {
+      sendResponse(
+        {
+          serverEvent: OutgoingMessageType.REFRESH_IFRAME,
+          data: {},
+        },
+        ws
+      );
+    });
+  });
 
   // TODO: Add authentication
   wss.on("connection", (ws) => {
@@ -178,6 +179,7 @@ const main = () => {
 
             const map: Record<string, string> = {};
 
+            // Later send these files 1 by 1 so we dont use whole memory
             for await (const file of it) {
               map[file.name] = file.contents || "";
             }

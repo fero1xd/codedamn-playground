@@ -110,7 +110,7 @@ export function WebSocketProvider({
         conn.send(JSON.stringify(data));
       }
     },
-    [conn]
+    [isReady, conn]
   );
 
   const addListener = (nonce: string, cb: (data: unknown) => void) => {
@@ -169,6 +169,23 @@ export function WebSocketProvider({
     };
   }
 
+  function sleep(amount: number) {
+    return new Promise<void>((res) => setTimeout(() => res(), amount));
+  }
+
+  async function fetchCallWithRetry(...args: Parameters<typeof fetchCall>) {
+    for (let i = 0; i < 3; i++) {
+      try {
+        return await fetchCall(...args);
+      } catch {
+        console.log("retrying ", args);
+        await sleep(1000);
+      }
+    }
+
+    throw new Error("Max no. of retries reached");
+  }
+
   return (
     <WSContext.Provider
       value={useMemo(() => {
@@ -183,7 +200,7 @@ export function WebSocketProvider({
             },
             GET_PROJECT_FILES() {
               console.log("ws context getting files");
-              return fetchCall("GET_PROJECT_FILES", {}) as Promise<
+              return fetchCallWithRetry("GET_PROJECT_FILES", {}) as Promise<
                 Record<string, string>
               >;
             },

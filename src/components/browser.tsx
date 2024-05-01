@@ -72,7 +72,7 @@ export function Browser({ containerUrl }: { containerUrl: string }) {
       </div>
       <iframe
         key={key}
-        className="h-full w-full p-2 bg-auto bg-white"
+        className="h-full w-full bg-auto bg-white"
         src={containerUrl}
         ref={ref}
         onLoad={() => {
