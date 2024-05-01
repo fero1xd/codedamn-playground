@@ -16,11 +16,13 @@ class FsService {
     });
   }
 
-  async watchForDepsChange(path: string, cb: (types: Dependencies) => void) {
+  async watchForDepsChange(cb: (types: Dependencies) => void) {
     // Will ensure that home directory is always present
-    this.getWorkDir();
+    const workDir = await this.getWorkDir();
 
-    const watcher = chokidar.watch(path, { ignoreInitial: true });
+    const watcher = chokidar.watch(path.join(workDir, "**/package.json"), {
+      ignoreInitial: true,
+    });
 
     let lastSeen: Dependencies = {
       devDependencies: {},
@@ -50,11 +52,14 @@ class FsService {
     const workDir = await this.getWorkDir();
     const watcher = chokidar.watch(workDir, {
       ignoreInitial: true,
-      // ignored: [path.join(workDir, "node_modules/**"), /(^|[\/\\])\../],
+      // Ignore all dot files/folders and everything *inside* node_modules folder
       ignored: (p) => {
         if (/(^|[\/\\])\../.test(p)) return true;
 
         if (p === path.join(workDir, "node_modules")) {
+          return false;
+        }
+        if (path.basename(p) === "node_modules") {
           return false;
         }
 
@@ -173,12 +178,11 @@ class FsService {
     }
   }
 
+  // Using this for adding models
   async getAllProjectFiles(dirPath: string) {
     try {
-      const extension = env.TEMPLATE === "typescript" ? ".ts" : ".tsx";
-
-      const tsFiles = await glob(dirPath + "/**/*", {
-        ignore: dirPath + "/node_modules/**",
+      const tsFiles = await glob(dirPath + "/**/*.*", {
+        ignore: [path.join(dirPath, "**/node_modules/**")],
       });
 
       const getFieldContent = this.getFileContent.bind(this);
@@ -186,6 +190,7 @@ class FsService {
       return {
         [Symbol.asyncIterator]: async function* () {
           for (const file of tsFiles) {
+            console.log(file);
             const contents = await getFieldContent(file);
             yield { name: file, contents };
           }
@@ -199,11 +204,3 @@ class FsService {
 }
 
 export const fsService = new FsService();
-
-fsService.getAllProjectFiles(env.WORK_DIR).then(async (it) => {
-  if (!it) return;
-
-  for await (const i of it) {
-    console.log(i.name);
-  }
-});

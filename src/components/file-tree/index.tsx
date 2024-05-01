@@ -29,11 +29,7 @@ export function FileTree({
 }) {
   const [selectedDir, setSelectedDir] = useState<Child | undefined>(undefined);
 
-  const { data: treeRoot, isLoading } = useWSQuery(
-    ["GENERATE_TREE"],
-    // A sub tree would be fresh for 2 minutes so react query will not refetch again and again on selection of same folders
-    120 * 1000
-  );
+  const { data: treeRoot, isLoading } = useWSQuery(["GENERATE_TREE"]);
 
   const queryClient = useQueryClient();
   const conn = useConnection();

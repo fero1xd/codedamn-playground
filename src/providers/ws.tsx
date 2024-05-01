@@ -12,7 +12,6 @@ import { v4 } from "uuid";
 import ReconnectingWebSocket from "reconnecting-websocket";
 
 export type Conn = {
-  // ws: WebSocketLike | null;
   isReady: boolean;
   sendJsonMessage: (json: Record<string, unknown>) => void;
 
@@ -59,9 +58,11 @@ export function WebSocketProvider({
           connectionTimeout: 15000,
         }
       );
+      // @ts-expect-error just for dev
+      window.ws = ws;
 
       ws.onopen = () => {
-        console.log("reconnecting ws connected");
+        console.log("ws connection opened");
 
         setConn(ws);
         setIsReady(true);
@@ -169,27 +170,10 @@ export function WebSocketProvider({
     };
   }
 
-  function sleep(amount: number) {
-    return new Promise<void>((res) => setTimeout(() => res(), amount));
-  }
-
-  async function fetchCallWithRetry(...args: Parameters<typeof fetchCall>) {
-    for (let i = 0; i < 3; i++) {
-      try {
-        return await fetchCall(...args);
-      } catch {
-        console.log("retrying ", args);
-        await sleep(1000);
-      }
-    }
-
-    throw new Error("Max no. of retries reached");
-  }
-
   return (
     <WSContext.Provider
-      value={useMemo(() => {
-        return {
+      value={useMemo(
+        () => ({
           isReady,
           sendJsonMessage,
           queries: {
@@ -199,13 +183,11 @@ export function WebSocketProvider({
               }) as Promise<Root>;
             },
             GET_PROJECT_FILES() {
-              console.log("ws context getting files");
-              return fetchCallWithRetry("GET_PROJECT_FILES", {}) as Promise<
+              return fetchCall("GET_PROJECT_FILES", {}) as Promise<
                 Record<string, string>
               >;
             },
             TERMINAL_SESSION_START(prevSessionId) {
-              console.log("sending terminal session start");
               return fetchCall("TERMINAL_SESSION_START", {
                 prevSessionId,
               }) as Promise<{
@@ -216,8 +198,9 @@ export function WebSocketProvider({
           // This is provided when no state management for query is required
           fetchCall,
           addSubscription: addSubscriptionForServerEvent,
-        };
-      }, [isReady])}
+        }),
+        [conn, isReady]
+      )}
     >
       {children}
     </WSContext.Provider>

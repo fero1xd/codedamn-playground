@@ -40,20 +40,17 @@ const main = () => {
   // 5 Mins
   const idleInterval = 5 * 60 * 1000;
 
-  fsService.watchForDepsChange(
-    path.join(env.WORK_DIR, env.DEPS_FILE),
-    (deps) => {
-      wss.clients.forEach((c) => {
-        sendResponse(
-          {
-            serverEvent: OutgoingMessageType.INSTALL_DEPS,
-            data: deps,
-          },
-          c
-        );
-      });
-    }
-  );
+  fsService.watchForDepsChange((deps) => {
+    wss.clients.forEach((c) => {
+      sendResponse(
+        {
+          serverEvent: OutgoingMessageType.INSTALL_DEPS,
+          data: deps,
+        },
+        c
+      );
+    });
+  });
 
   fsService.watchWorkDir((event, path) => {
     wss.clients.forEach((ws) => {

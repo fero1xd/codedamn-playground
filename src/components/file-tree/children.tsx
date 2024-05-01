@@ -83,10 +83,7 @@ function Item({ node, selectedDir, onSelect, selectedFile }: ItemProps) {
 }
 
 function Nested({ node: dir, onSelect, selectedDir, selectedFile }: ItemProps) {
-  const { data, isLoading } = useWSQuery(
-    ["GENERATE_TREE", dir.path],
-    120 * 1000
-  );
+  const { data, isLoading } = useWSQuery(["GENERATE_TREE", dir.path]);
 
   const useFullData = useMemo(() => {
     if (data) {

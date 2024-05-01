@@ -1,24 +1,23 @@
-import { Monaco } from '@monaco-editor/react';
-import { Editor } from '../../types';
-import { configureFormatting } from './format';
+import { Monaco } from "@monaco-editor/react";
+import { configureFormatting } from "./format";
 
-export function configureJs(_e: Editor, m: Monaco) {
+export function configureJs(m: Monaco) {
   configureFormatting(m);
 
   m.languages.typescript.javascriptDefaults.setEagerModelSync(true);
 
   const compilerOptions = {
     jsx: m.languages.typescript.JsxEmit.Preserve,
-    jsxFactory: 'React.createElement',
+    jsxFactory: "React.createElement",
     allowNonTsExtensions: true,
     allowImportingTsExtensions: true,
     allowJs: false,
     target: m.languages.typescript.ScriptTarget.Latest,
     experimentalDecorators: true,
     allowSyntheticDefaultImports: true,
-    lib: ['esnext', 'dom'],
+    lib: ["esnext", "dom"],
     module: m.languages.typescript.ModuleKind.ESNext,
-    jsxFragmentFactory: 'React.Fragment',
+    jsxFragmentFactory: "React.Fragment",
   };
 
   m.languages.typescript.javascriptDefaults.setCompilerOptions(compilerOptions);
