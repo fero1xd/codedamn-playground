@@ -61,7 +61,7 @@ export function CreatePlayground() {
 
   const createPlaygroundMutation = useMutation({
     mutationFn: async (data: z.infer<typeof playgroundSchema>) => {
-      const res = await fetch(`http://${API_URL}:3000/playgrounds/create`, {
+      const res = await fetch(`${API_URL}:3000/playgrounds/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
