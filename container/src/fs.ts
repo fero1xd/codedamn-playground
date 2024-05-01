@@ -204,3 +204,10 @@ class FsService {
 }
 
 export const fsService = new FsService();
+
+fsService.getAllProjectFiles(env.WORK_DIR).then(async (it) => {
+  if (!it) return;
+
+  for await (const i of it) {
+  }
+});

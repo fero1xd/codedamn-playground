@@ -7,7 +7,6 @@ import { fsService } from "./fs";
 import { TerminalManager } from "./sessions";
 import { v4 } from "uuid";
 import { env } from "./env";
-import path from "path";
 import { watchPorts } from "./ports";
 
 const main = () => {
@@ -114,6 +113,7 @@ const main = () => {
 
       if (!success || !zodSuccess) {
         console.log("invalid ws message");
+        console.log(raw);
         return;
       }
 

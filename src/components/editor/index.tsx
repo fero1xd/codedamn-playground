@@ -49,6 +49,7 @@ export function Editor({
   const monacoInstance = useMonaco() as Monaco | null;
   const [openedModels, setOpenedModels] = useState<TextModel[]>([]);
   const editorRef = useRef<EditorType>();
+  const [hasMounted, setMounted] = useState(false);
 
   const { data: treeRoot } = useWSQuery(["GENERATE_TREE"]);
 
@@ -241,6 +242,8 @@ export function Editor({
       saveChangesRaw(currentModel.uri.path, currentModel.getValue());
     });
 
+    setMounted(true);
+
     // Start with a fresh slate
     m.editor.getModels().forEach((m) => m.dispose());
   };
@@ -248,12 +251,15 @@ export function Editor({
   const hasRequested = useRef(false);
 
   useEffect(() => {
-    console.log(
-      conn?.isReady,
-      !!monacoInstance,
-      !!editorRef.current,
-      hasRequested.current
-    );
+    console.log({
+      isReady: conn?.isReady,
+      monacoInstance,
+      editorRef,
+      hasRequested,
+      hasMounted,
+    });
+    if (!hasMounted) return;
+
     if (
       !conn?.isReady ||
       !monacoInstance ||
@@ -286,7 +292,7 @@ export function Editor({
 
       onReady();
     });
-  }, [conn, conn?.isReady, monacoInstance]);
+  }, [conn, conn?.isReady, monacoInstance, hasMounted]);
 
   const resolveDeps = useDebouncedCallback(async (deps: Dependencies) => {
     const fetchedTypes = await typesService.getTypeUrls(deps);
@@ -306,9 +312,6 @@ export function Editor({
 
   const saveChangesRaw = async (filePath: string, contents: string) => {
     if (!conn || !conn.isReady) return;
-
-    console.log(filePath, contents);
-    console.log(!!conn);
 
     conn.sendJsonMessage({
       nonce: "__ignored__",
