@@ -4,28 +4,15 @@ import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
 import { useWSQuery } from "@/hooks/use-ws-query";
 import { monaco } from "../editor/monaco";
+import { useSelectedItem } from "@/stores/selected-item";
 
 type ChildrenProps = {
   node: Node;
-  selectedDir: Child | undefined;
-  selectedFile: string | undefined;
-  onSelect: (node: Child) => void;
 };
 
-export function Children({
-  node,
-  onSelect,
-  selectedDir,
-  selectedFile,
-}: ChildrenProps) {
+export function Children({ node }: ChildrenProps) {
   return node.children.map((c) => (
-    <Item
-      key={c.path + "/" + c.name}
-      node={c}
-      selectedDir={selectedDir}
-      onSelect={onSelect}
-      selectedFile={selectedFile}
-    />
+    <Item key={c.path + "/" + c.name} node={c} />
   ));
 }
 
@@ -33,30 +20,34 @@ type ItemProps = ChildrenProps & {
   node: Child;
 };
 
-function Item({ node, selectedDir, onSelect, selectedFile }: ItemProps) {
+function Item({ node }: ItemProps) {
   const [open, setOpen] = useState(false);
   const path = node.path;
   const uri = monaco.Uri.parse(
     `file:///${path.startsWith("/") ? path.slice(1) : path}`
   ).toString();
 
-  const isSelected = selectedFile
-    ? selectedFile === uri
-    : selectedDir?.path === path;
+  const setSelectedDir = useSelectedItem((s) => s.setSelectedDir);
+  const setSelectedFile = useSelectedItem((s) => s.setSelectedFile);
+  // const selectedFile = useSelectedItem((s) => s.selectedFile);
 
+  // const isSelected = selectedFile ? selectedFile === uri : "" === path;
   return (
     <>
       <div
         key={node.path}
         onClick={() => {
           if (node.isDir) {
+            console.log("toggling open ", path, open);
             setOpen((o) => !o);
+            setSelectedDir(path);
+          } else {
+            setSelectedFile(uri);
           }
-          onSelect(node);
         }}
         className={cn(
           `flex items-center transition-all ease-out`,
-          `${isSelected ? "bg-gray-900" : "bg-transparent"} hover:cursor-pointer hover:bg-gray-900`
+          `hover:cursor-pointer hover:bg-gray-900`
         )}
         style={{ paddingLeft: `${node.depth * 16}px` }}
       >
@@ -70,19 +61,12 @@ function Item({ node, selectedDir, onSelect, selectedFile }: ItemProps) {
         <span style={{ marginLeft: 1, marginBottom: 3 }}>{node.name}</span>
       </div>
 
-      {open && node.isDir && (
-        <Nested
-          node={node}
-          onSelect={onSelect}
-          selectedDir={selectedDir}
-          selectedFile={selectedFile}
-        />
-      )}
+      {open && node.isDir && <Nested node={node} />}
     </>
   );
 }
 
-function Nested({ node: dir, onSelect, selectedDir, selectedFile }: ItemProps) {
+function Nested({ node: dir }: ItemProps) {
   const { data, isLoading } = useWSQuery(["GENERATE_TREE", dir.path]);
 
   const useFullData = useMemo(() => {
@@ -106,13 +90,5 @@ function Nested({ node: dir, onSelect, selectedDir, selectedFile }: ItemProps) {
     return <p>error fetching contents for {dir.path}</p>;
   }
 
-  return (
-    <Children
-      key={dir.path + Math.random()}
-      node={useFullData}
-      onSelect={onSelect}
-      selectedDir={selectedDir}
-      selectedFile={selectedFile}
-    />
-  );
+  return <Children key={dir.path + Math.random()} node={useFullData} />;
 }

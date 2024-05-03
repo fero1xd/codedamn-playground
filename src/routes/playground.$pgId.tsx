@@ -20,7 +20,6 @@ export const Route = createFileRoute("/playground/$pgId")({
 function Playground() {
   const { pgId } = Route.useParams();
   const { dimensions, fitTerm, terminal, forceFit } = useTerminal();
-  const [selectedFile, setSelectedFile] = useState<string>();
 
   const { isReady, status, setStatus } = usePgLoading();
 
@@ -81,8 +80,6 @@ function Playground() {
           <Layout
             editor={
               <Editor
-                setSelectedFile={setSelectedFile}
-                selectedFile={selectedFile}
                 onReady={() => {
                   console.log("**editor on_ready**");
                   setStatus("editor", () => ({
@@ -94,8 +91,6 @@ function Playground() {
             }
             fileTree={
               <FileTree
-                selectedFile={selectedFile}
-                setSelectedFile={setSelectedFile}
                 onReady={() => {
                   if (!status.fileTree.loading) return;
                   console.log("**file tree on_ready**");

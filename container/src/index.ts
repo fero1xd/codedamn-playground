@@ -52,6 +52,7 @@ const main = () => {
   });
 
   fsService.watchWorkDir((event, path) => {
+    console.log(event, path);
     wss.clients.forEach((ws) => {
       sendResponse(
         {
@@ -130,12 +131,14 @@ const main = () => {
           );
           break;
         case IncomingMessage.GENERATE_TREE:
+          const treeRoot = await fsService.generateFileTree(
+            message.data?.path || env.WORK_DIR
+          );
+          if (!treeRoot) return;
           sendResponse(
             {
               nonce: message.nonce,
-              data: await fsService.generateFileTree(
-                message?.data?.path || env.WORK_DIR
-              ),
+              data: treeRoot,
             },
             ws
           );

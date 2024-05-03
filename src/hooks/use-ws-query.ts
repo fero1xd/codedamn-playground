@@ -13,7 +13,10 @@ export type QueryKey<T extends keyof Conn["queries"]> = [
 
 export function useWSQuery<K extends keyof Conn["queries"]>(
   key: QueryKey<K>,
-  staleTime?: number
+  opts?: {
+    staleTime?: number;
+    enabled?: boolean;
+  }
 ) {
   const connection = useConnection();
   const queries = connection!.queries;
@@ -33,8 +36,17 @@ export function useWSQuery<K extends keyof Conn["queries"]>(
 
       return await fn(...(key.length > 1 ? key.slice(1) : []));
     },
-    enabled: !!connection && connection.isReady && !!connection.queries,
+    enabled:
+      !!connection &&
+      connection.isReady &&
+      !!connection.queries &&
+      (!opts ? true : opts.enabled === undefined ? true : opts.enabled),
     refetchOnWindowFocus: false,
-    staleTime: staleTime === undefined ? 0 : staleTime,
+    staleTime:
+      opts === undefined
+        ? 0
+        : opts.staleTime !== undefined
+          ? opts.staleTime
+          : 0,
   });
 }

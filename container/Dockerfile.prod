@@ -13,6 +13,8 @@ RUN apt-get update -y && \
     apt-get -y install make build-essential && \
     apt-get -y autoclean
 
+RUN npm i pnpm typescript ts-node bun -g
+
 FROM base AS install
 RUN mkdir -p /temp/dev
 COPY package.json bun.lockb /temp/dev/
@@ -40,6 +42,13 @@ USER slave
 
 RUN mkdir /home/slave/app
 RUN echo "PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '" >> ~/.bashrc
+
+# RUN mkdir ~/.npm-global
+# RUN npm config set prefix '~/.npm-global'
+# RUN touch ~/.profile
+# RUN echo "export PATH=~/.npm-global/bin:$PATH" > ~/.profile
+# RUN source ~/.profile
+
 
 EXPOSE 3001 42069 42070 
 CMD ["node", "dist/index.mjs"]

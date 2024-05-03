@@ -1,10 +1,9 @@
 import { ChangeEvent, Child } from "@/queries/types";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Children } from "./children";
 import { useQueryClient } from "@tanstack/react-query";
 import { useWSQuery } from "@/hooks/use-ws-query";
 import { Spinner } from "../ui/loading";
-import { monaco } from "../editor/monaco";
 import { useConnection } from "@/hooks/use-connection";
 import path from "path-browserify";
 
@@ -18,18 +17,10 @@ const addDepth = (children: Child[], currentDepth: number) => {
   });
 };
 
-export function FileTree({
-  selectedFile,
-  setSelectedFile,
-  onReady,
-}: {
-  selectedFile?: string;
-  setSelectedFile: (uri: string) => void;
-  onReady: () => void;
-}) {
-  const [selectedDir, setSelectedDir] = useState<Child | undefined>(undefined);
-
+export function FileTree({ onReady }: { onReady: () => void }) {
   const { data: treeRoot, isLoading } = useWSQuery(["GENERATE_TREE"]);
+  // const { selectedFile, setSelectedFile, setSelectedDir, selectedDir } =
+  //   useSelectedItem();
 
   const queryClient = useQueryClient();
   const conn = useConnection();
@@ -48,7 +39,9 @@ export function FileTree({
             : path.join(data.path, "..");
 
         console.log("change event in file tree", { finalPath });
-        console.log(!!treeRoot);
+
+        if (data.event === "unlinkDir" && finalPath === data.path) {
+        }
 
         if (finalPath === "") {
           queryClient.invalidateQueries({
@@ -93,29 +86,20 @@ export function FileTree({
     return <p>error fetching workdir</p>;
   }
 
-  const onSelect = (child: Child) => {
-    if (child.isDir) {
-      setSelectedDir(child);
-      return;
-    }
+  // const onSelect = (child: Child) => {
+  //   if (child.isDir) {
+  //     setSelectedDir(child.path);
+  //     return;
+  //   }
 
-    const childUri = monaco.Uri.parse(
-      `file:///${child.path.startsWith("/") ? child.path.slice(1) : child.path}`
-    ).toString();
+  //   const childUri = monaco.Uri.parse(
+  //     `file:///${child.path.startsWith("/") ? child.path.slice(1) : child.path}`
+  //   ).toString();
 
-    console.log(childUri);
+  //   if (!selectedFile || selectedFile !== childUri) {
+  //     setSelectedFile(childUri);
+  //   }
+  // };
 
-    if (!selectedFile || selectedFile !== childUri) {
-      setSelectedFile(childUri);
-    }
-  };
-
-  return (
-    <Children
-      selectedFile={selectedFile}
-      node={treeRoot}
-      onSelect={onSelect}
-      selectedDir={selectedDir}
-    />
-  );
+  return <Children node={treeRoot} />;
 }

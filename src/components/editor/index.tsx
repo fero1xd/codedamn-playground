@@ -30,26 +30,22 @@ import { useWSQuery } from "@/hooks/use-ws-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dependencies, Root } from "@/queries/types";
 import { Placeholder } from "./placeholder";
+import { useSelectedItem } from "@/stores/selected-item";
 
 const editorStates = new EditorState();
 
 type EditorProps = {
-  selectedFile: string | undefined;
-  setSelectedFile: (f: string | undefined) => void;
   onReady: () => void;
 };
 
-export function Editor({
-  selectedFile,
-  setSelectedFile,
-  onReady,
-}: EditorProps) {
+export function Editor({ onReady }: EditorProps) {
   const { themeLoaded } = useMaterial();
 
   const monacoInstance = useMonaco() as Monaco | null;
   const [openedModels, setOpenedModels] = useState<TextModel[]>([]);
   const editorRef = useRef<EditorType>();
   const [hasMounted, setMounted] = useState(false);
+  const { selectedFile, setSelectedFile } = useSelectedItem();
 
   const { data: treeRoot } = useWSQuery(["GENERATE_TREE"]);
 
@@ -63,11 +59,13 @@ export function Editor({
 
       const currentModel = editor.getModel();
 
-      if (currentModel && currentModel.uri.toString() !== fileUri) {
-        editorStates.set(currentModel, editor);
-      }
-
       const existingModel = m.editor.getModel(monaco.Uri.parse(fileUri));
+
+      const contents = await conn.fetchCall<string>("FILE_CONTENT", {
+        filePath: fileUri.replace("file://", ""),
+      });
+      console.log("fetched contents", contents);
+      existingModel?.setValue(contents);
 
       if (existingModel) {
         if (existingModel.uri.toString() === currentModel?.uri.toString())
@@ -86,19 +84,12 @@ export function Editor({
           return;
         }
 
-        console.log(openedModels);
-
         setOpenedModels((prev) => [...prev, existingModel as TextModel]);
       } else {
         console.log("creating model", fileUri);
-        const contents = await conn.fetchCall<string>("FILE_CONTENT", {
-          filePath: fileUri.replace("file://", ""),
-        });
-
         const uri = monaco.Uri.parse(fileUri);
         const createdModel = m.editor.createModel(contents, undefined, uri);
 
-        console.log("created model", createdModel);
         if (silent) return;
 
         // @ts-expect-error Broken types
@@ -196,13 +187,16 @@ export function Editor({
     editorRef.current = e;
 
     e.onDidChangeModel((event) => {
-      setSelectedFile(
-        event.newModelUrl ? event.newModelUrl.toString() : undefined
-      );
+      // setSelectedFile(
+      //   event.newModelUrl ? event.newModelUrl.toString() : undefined
+      // );
 
       if (event.oldModelUrl) {
         const oldModel = m.editor.getModel(event.oldModelUrl);
         if (!oldModel || oldModel.isDisposed()) return;
+
+        console.log("storing view state of prev model");
+        editorStates.set(oldModel as TextModel, e);
 
         const contents = oldModel.getValue();
 
@@ -312,6 +306,7 @@ export function Editor({
 
   const saveChangesRaw = async (filePath: string, contents: string) => {
     if (!conn || !conn.isReady) return;
+    console.log("SENDING SAVE CHANGES", filePath);
 
     conn.sendJsonMessage({
       nonce: "__ignored__",
@@ -341,24 +336,25 @@ export function Editor({
         onChangeModel={(m) => {
           if (!editorRef.current) return;
 
-          const currentModel = editorRef.current.getModel();
+          // const currentModel = editorRef.current.getModel();
           // Store model's view state before switching
-          if (currentModel) {
-            console.log("setting view state from tabs");
-            editorStates.set(currentModel, editorRef.current);
-          }
+          // if (currentModel) {
+          //   console.log("setting view state from tabs");
+          //   editorStates.set(currentModel, editorRef.current);
+          // }
 
-          editorRef.current?.setModel(m);
+          setSelectedFile(m.uri.toString());
         }}
         closeModel={(m) => {
           if (!editorRef.current) return;
 
-          console.log("setting view state before closing model");
-          editorStates.set(m, editorRef.current);
+          // console.log("setting view state before closing model");
+          // editorStates.set(m, editorRef.current);
 
           if (openedModels.length < 2) {
             setOpenedModels([]);
             editorRef.current.setModel(null);
+            setSelectedFile(undefined);
             return;
           }
 
@@ -370,7 +366,8 @@ export function Editor({
             const randomTab =
               newTabs[Math.floor(Math.random() * newTabs.length)];
 
-            editorRef.current.setModel(randomTab);
+            // editorRef.current.setModel(randomTab);
+            setSelectedFile(randomTab.uri.toString());
           }
 
           setOpenedModels(newTabs);

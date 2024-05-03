@@ -5,17 +5,8 @@ import chokidar from "chokidar";
 import { env } from "./env";
 import _ from "lodash";
 import { glob } from "glob";
-import { LRUCache } from "lru-cache";
 
 class FsService {
-  private lruCache: LRUCache<{}, {}, unknown>;
-
-  constructor() {
-    this.lruCache = new LRUCache({
-      max: 20,
-    });
-  }
-
   async watchForDepsChange(cb: (types: Dependencies) => void) {
     // Will ensure that home directory is always present
     const workDir = await this.getWorkDir();
@@ -23,6 +14,7 @@ class FsService {
     const watcher = chokidar.watch(path.join(workDir, "**/package.json"), {
       ignoreInitial: true,
     });
+    console.log("watching for deps change");
 
     let lastSeen: Dependencies = {
       devDependencies: {},
@@ -97,39 +89,38 @@ class FsService {
   }
 
   async generateFileTree(dirName: string) {
-    const contents = await fs.readdir(dirName, { withFileTypes: true });
+    try {
+      const contents = await fs.readdir(dirName, { withFileTypes: true });
 
-    const sortedContents = contents.sort(
-      (a, b) => (a.isDirectory() ? 0 : 1) - (b.isDirectory() ? 0 : 1)
-    );
+      const sortedContents = contents.sort(
+        (a, b) => (a.isDirectory() ? 0 : 1) - (b.isDirectory() ? 0 : 1)
+      );
 
-    const root: Root = {
-      path: dirName,
-      children: [],
-    };
-
-    for (const c of sortedContents) {
-      const p = path.join(c.path, c.name);
-
-      root.children.push({
-        isDir: c.isDirectory(),
-        path: p,
-        name: c.name,
+      const root: Root = {
+        path: dirName,
         children: [],
-      });
-    }
+      };
 
-    return root;
+      for (const c of sortedContents) {
+        const p = path.join(c.path, c.name);
+
+        root.children.push({
+          isDir: c.isDirectory(),
+          path: p,
+          name: c.name,
+          children: [],
+        });
+      }
+
+      return root;
+    } catch (e) {
+      console.log("error generating file tree");
+    }
   }
 
   async getFileContent(filePath: string) {
-    if (this.lruCache.has(filePath)) {
-      return this.lruCache.get(filePath) as string;
-    }
-
     try {
       const c = await fs.readFile(filePath, { encoding: "utf-8" });
-      this.lruCache.set(filePath, c);
 
       return c;
     } catch (e) {
@@ -170,8 +161,6 @@ class FsService {
       }
 
       await writeFile(filePath, contents, { encoding: "utf-8" });
-
-      this.lruCache.set(filePath, contents);
     } catch (e) {
       console.log("erro while saving file");
       console.log(e);
@@ -204,10 +193,3 @@ class FsService {
 }
 
 export const fsService = new FsService();
-
-fsService.getAllProjectFiles(env.WORK_DIR).then(async (it) => {
-  if (!it) return;
-
-  for await (const i of it) {
-  }
-});
