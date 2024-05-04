@@ -6,12 +6,6 @@ export function configureTs(monaco: Monaco) {
 
   monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
 
-  // Typescript settings
-  const _compilerOptions = {
-    // jsx: m.languages.typescript.JsxEmit.Preserve,
-    // jsxFactory: "React.createElement",
-  };
-
   monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
     // https://github.com/microsoft/TypeScript-Website/blob/v2/packages/sandbox/src/compilerOptions.ts
     strict: true,

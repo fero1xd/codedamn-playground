@@ -283,6 +283,28 @@ export function Editor({ onReady }: EditorProps) {
       }
     });
 
+    // For jump to defs
+    // @ts-expect-error Internal
+    const editorService = e._codeEditorService;
+    const openEditorBase = editorService.openCodeEditor.bind(editorService);
+    editorService.openCodeEditor = async (
+      input: any,
+      source: monaco.editor.ICodeEditor
+    ) => {
+      const result = await openEditorBase(input, source);
+      if (result === null) {
+        console.log("intercepted");
+        console.log("Open definition for:", input);
+        // console.log("Corresponding model:", m.editor.getModel(input.resource));
+
+        console.log(input.resource.toString());
+        setSelectedFile(input.resource.toString());
+
+        // source.setModel(m.editor.getModel(input.resource));
+      }
+      return result; // always return the base result
+    };
+
     // @ts-expect-error tttt
     const { default: highlighter } = await import("monaco-jsx-highlighter");
     console.log(highlighter);
@@ -414,6 +436,7 @@ export function Editor({ onReady }: EditorProps) {
           if (openedModels.length < 2) {
             setOpenedModels([]);
             editorRef.current.setModel(null);
+
             setSelectedFile(undefined);
             return;
           }

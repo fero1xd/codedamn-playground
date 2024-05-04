@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useConnection } from "./use-connection";
 import { Conn } from "@/providers/ws";
-import { useEffect } from "react";
 
 type TParams<T extends keyof Conn["queries"]> =
   Parameters<Conn["queries"][T]> extends [...infer Rest] ? Rest : never;

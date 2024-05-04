@@ -13,11 +13,11 @@ export const useSelectedItem = create(
       selectedDir: undefined,
     } as UseSelectedItem,
     (set) => ({
-      setSelectedDir: (dirPath: string) =>
+      setSelectedDir: (dirPath: string | undefined) =>
         set({
           selectedDir: dirPath,
         }),
-      setSelectedFile: (dirPath: string) =>
+      setSelectedFile: (dirPath: string | undefined) =>
         set({
           selectedFile: dirPath,
         }),
