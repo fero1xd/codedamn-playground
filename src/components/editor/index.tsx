@@ -32,14 +32,13 @@ import { Dependencies, Root } from "@/queries/types";
 import { Placeholder } from "./placeholder";
 import { useSelectedItem } from "@/stores/selected-item";
 
-const editorStates = new EditorState();
-
 type EditorProps = {
   onReady: () => void;
 };
 
 export function Editor({ onReady }: EditorProps) {
   const { themeLoaded } = useMaterial();
+  const editorStates = useRef(new EditorState());
 
   const monacoInstance = useMonaco() as Monaco | null;
   const [openedModels, setOpenedModels] = useState<TextModel[]>([]);
@@ -64,6 +63,10 @@ export function Editor({ onReady }: EditorProps) {
       if (!conn) return;
 
       const currentModel = editor.getModel();
+      if (currentModel) {
+        console.log("Storing view state");
+        editorStates.current.set(currentModel, editor);
+      }
 
       const existingModel = m.editor.getModel(monaco.Uri.parse(fileUri));
 
@@ -248,20 +251,15 @@ export function Editor({ onReady }: EditorProps) {
     openFile(editorRef.current, monacoInstance, selectedFile);
   }, [selectedFile, editorRef, monacoInstance]);
 
+  const goToDefPos = useRef<{ lineNumber: number; column: number }>();
+
   const onMount = async (e: EditorType, m: Monaco) => {
     editorRef.current = e;
 
     e.onDidChangeModel((event) => {
-      // setSelectedFile(
-      //   event.newModelUrl ? event.newModelUrl.toString() : undefined
-      // );
-
       if (event.oldModelUrl) {
         const oldModel = m.editor.getModel(event.oldModelUrl);
         if (!oldModel || oldModel.isDisposed()) return;
-
-        console.log("storing view state of prev model");
-        editorStates.set(oldModel as TextModel, e);
 
         const contents = oldModel.getValue();
 
@@ -274,12 +272,23 @@ export function Editor({ onReady }: EditorProps) {
 
       const newModel = m.editor.getModel(event.newModelUrl);
       if (newModel) {
-        const editorState = editorStates.get(newModel as TextModel);
+        const editorState = editorStates.current.get(newModel as TextModel);
         if (editorState) {
           console.log("restoring view state");
           e.restoreViewState(editorState);
-          e.focus();
         }
+
+        if (goToDefPos.current) {
+          console.log("setting cur position coz of go to def");
+          e.setPosition({
+            column: goToDefPos.current.column,
+            lineNumber: goToDefPos.current.lineNumber,
+          });
+
+          goToDefPos.current = undefined;
+        }
+
+        e.focus();
       }
     });
 
@@ -296,8 +305,10 @@ export function Editor({ onReady }: EditorProps) {
         console.log("intercepted");
         console.log("Open definition for:", input);
         // console.log("Corresponding model:", m.editor.getModel(input.resource));
-
-        console.log(input.resource.toString());
+        goToDefPos.current = {
+          lineNumber: input.options.selection.startLineNumber,
+          column: input.options.selection.startColumn,
+        };
         setSelectedFile(input.resource.toString());
 
         // source.setModel(m.editor.getModel(input.resource));
@@ -418,23 +429,16 @@ export function Editor({ onReady }: EditorProps) {
         onChangeModel={(m) => {
           if (!editorRef.current) return;
 
-          // const currentModel = editorRef.current.getModel();
-          // Store model's view state before switching
-          // if (currentModel) {
-          //   console.log("setting view state from tabs");
-          //   editorStates.set(currentModel, editorRef.current);
-          // }
-
           setSelectedFile(m.uri.toString());
         }}
         closeModel={(m) => {
           if (!editorRef.current) return;
 
-          // console.log("setting view state before closing model");
-          // editorStates.set(m, editorRef.current);
-
           if (openedModels.length < 2) {
             setOpenedModels([]);
+
+            console.log("setting view state from tabs");
+            editorStates.current.set(m, editorRef.current);
             editorRef.current.setModel(null);
 
             setSelectedFile(undefined);
