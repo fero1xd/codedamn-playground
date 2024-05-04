@@ -5,7 +5,7 @@ import {
 } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
 import { useMaterial } from "./use-material";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useConnection } from "@/hooks/use-connection";
 import { configureHtml } from "./languages/html";
 import { configureCss } from "./languages/css";
@@ -54,7 +54,13 @@ export function Editor({ onReady }: EditorProps) {
   const queryClient = useQueryClient();
 
   const openFile = useCallback(
-    async (editor: EditorType, m: Monaco, fileUri: string, silent = false) => {
+    async (
+      editor: EditorType,
+      m: Monaco,
+      fileUri: string,
+      silent = false,
+      addAsLib = false
+    ) => {
       if (!conn) return;
 
       const currentModel = editor.getModel();
@@ -64,14 +70,39 @@ export function Editor({ onReady }: EditorProps) {
       const contents = await conn.fetchCall<string>("FILE_CONTENT", {
         filePath: fileUri.replace("file://", ""),
       });
-      console.log("fetched contents", contents);
       existingModel?.setValue(contents);
 
-      if (existingModel) {
-        if (existingModel.uri.toString() === currentModel?.uri.toString())
-          return;
+      if (addAsLib) {
+        const allLibs =
+          m.languages.typescript.typescriptDefaults.getExtraLibs();
 
-        if (silent) return;
+        for (const libPath of Object.keys(allLibs)) {
+          if (libPath === fileUri) {
+            console.log("**found match**");
+            allLibs[libPath] = {
+              version: allLibs[libPath].version,
+              content: contents,
+            };
+            break;
+          }
+        }
+
+        console.log(allLibs, fileUri);
+
+        m.languages.typescript.typescriptDefaults.setExtraLibs(
+          Object.entries(allLibs).map((e) => ({
+            content: e[1].content,
+            filePath: e[0],
+          }))
+        );
+      }
+
+      if (existingModel) {
+        if (
+          existingModel.uri.toString() === currentModel?.uri.toString() ||
+          silent
+        )
+          return;
 
         // @ts-expect-error broken types
         editor.setModel(existingModel);
@@ -88,6 +119,14 @@ export function Editor({ onReady }: EditorProps) {
       } else {
         console.log("creating model", fileUri);
         const uri = monaco.Uri.parse(fileUri);
+
+        if (addAsLib) {
+          console.log("adding as extra lib", uri.toString());
+          m.languages.typescript.typescriptDefaults.addExtraLib(
+            contents,
+            uri.toString()
+          );
+        }
         const createdModel = m.editor.createModel(contents, undefined, uri);
 
         if (silent) return;
@@ -120,7 +159,7 @@ export function Editor({ onReady }: EditorProps) {
       conn.addSubscription(
         "REFETCH_DIR",
         async (data: {
-          event: "add" | "addDir" | "unlink" | "unlinkDir";
+          event: "add" | "addDir" | "unlink" | "unlinkDir" | "change";
           path: string;
         }) => {
           console.log("changes in work dir: editor", data);
@@ -129,25 +168,24 @@ export function Editor({ onReady }: EditorProps) {
           ]);
           if (!treeRoot) return;
 
+          const uri = monaco.Uri.parse(
+            `file:///${data.path.startsWith("/") ? data.path.slice(1) : data.path}`
+          );
+
           if (data.event === "add") {
             if (!editorRef.current || !monacoInstance) return;
 
             openFile(
               editorRef.current,
               monacoInstance,
-              monaco.Uri.parse(
-                `file:///${data.path.startsWith("/") ? data.path.slice(1) : data.path}`
-              ).toString(),
+              uri.toString(),
+              true,
               true
             );
           } else if (data.event === "unlink") {
             if (!editorRef.current || !monacoInstance) return;
 
-            const doesExists = monacoInstance.editor.getModel(
-              monaco.Uri.parse(
-                `file:///${data.path.startsWith("/") ? data.path.slice(1) : data.path}`
-              )
-            );
+            const doesExists = monacoInstance.editor.getModel(uri);
 
             if (doesExists) {
               console.log("unlinking/disposing model", data.path);
@@ -159,6 +197,33 @@ export function Editor({ onReady }: EditorProps) {
               );
 
               doesExists.dispose();
+            }
+          } else if (data.event === "change") {
+            if (!editorRef.current || !monacoInstance) return;
+
+            const currentModel = await editorRef.current?.getModel();
+            if (!currentModel) return;
+
+            if (currentModel.uri.toString() === uri.toString()) {
+              const newContents = await conn.fetchCall("FILE_CONTENT", {
+                filePath: data.path,
+              });
+
+              if (newContents !== currentModel.getValue()) {
+                toast({
+                  title: "Alert",
+                  description:
+                    "Their are changes in the current file, saving the file would overwrite them!",
+                });
+              }
+            } else {
+              openFile(
+                editorRef.current,
+                monacoInstance,
+                uri.toString(),
+                true,
+                true
+              );
             }
           }
         }
@@ -245,15 +310,7 @@ export function Editor({ onReady }: EditorProps) {
   const hasRequested = useRef(false);
 
   useEffect(() => {
-    console.log({
-      isReady: conn?.isReady,
-      monacoInstance,
-      editorRef,
-      hasRequested,
-      hasMounted,
-    });
     if (!hasMounted) return;
-
     if (
       !conn?.isReady ||
       !monacoInstance ||
@@ -266,16 +323,19 @@ export function Editor({ onReady }: EditorProps) {
 
     console.log("requesting project files");
 
-    conn?.queries.GET_PROJECT_FILES().then((maps) => {
-      if (!maps) return;
+    conn?.queries.GET_PROJECT_FILES().then(async (files) => {
+      await Promise.all(
+        files.map((f) =>
+          openFile(
+            editorRef.current!,
+            monacoInstance,
 
-      for (const filePath of Object.keys(maps)) {
-        monacoInstance.editor.createModel(
-          maps[filePath] || "",
-          undefined,
-          monaco.Uri.parse(filePath.replace("/", ""))
-        );
-      }
+            monaco.Uri.parse(f.replace("/", "")).toString(),
+            true,
+            true
+          )
+        )
+      );
 
       toast({
         description: "Loaded all project files",

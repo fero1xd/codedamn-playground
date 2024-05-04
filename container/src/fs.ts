@@ -39,7 +39,10 @@ class FsService {
   }
 
   async watchWorkDir(
-    cb: (event: "add" | "addDir" | "unlink" | "unlinkDir", p: string) => void
+    cb: (
+      event: "change" | "add" | "addDir" | "unlink" | "unlinkDir",
+      p: string
+    ) => void
   ) {
     const workDir = await this.getWorkDir();
     const watcher = chokidar.watch(workDir, {
@@ -60,7 +63,7 @@ class FsService {
     });
 
     watcher.on("all", (event, path) => {
-      if (event === "change") return;
+      // if (event === "change") return;
 
       cb(event, path);
     });
@@ -174,17 +177,7 @@ class FsService {
         ignore: [path.join(dirPath, "**/node_modules/**")],
       });
 
-      const getFieldContent = this.getFileContent.bind(this);
-
-      return {
-        [Symbol.asyncIterator]: async function* () {
-          for (const file of tsFiles) {
-            console.log(file);
-            const contents = await getFieldContent(file);
-            yield { name: file, contents };
-          }
-        },
-      };
+      return tsFiles;
     } catch (e) {
       console.log("error getting all project files");
       console.log(e);

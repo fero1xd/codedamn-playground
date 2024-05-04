@@ -17,7 +17,7 @@ export type Conn = {
 
   queries: {
     GENERATE_TREE: (path?: string) => Promise<Root>;
-    GET_PROJECT_FILES: () => Promise<Record<string, string>>;
+    GET_PROJECT_FILES: () => Promise<string[]>;
     TERMINAL_SESSION_START: (
       prevSessionId?: string
     ) => Promise<{ sessionId: string }>;
@@ -183,9 +183,7 @@ export function WebSocketProvider({
               }) as Promise<Root>;
             },
             GET_PROJECT_FILES() {
-              return fetchCall("GET_PROJECT_FILES", {}) as Promise<
-                Record<string, string>
-              >;
+              return fetchCall("GET_PROJECT_FILES", {}) as Promise<string[]>;
             },
             TERMINAL_SESSION_START(prevSessionId) {
               return fetchCall("TERMINAL_SESSION_START", {

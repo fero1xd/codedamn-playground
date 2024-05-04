@@ -174,20 +174,11 @@ const main = () => {
           terminalManager.resize(message.data.sessionId, message.data);
           break;
         case IncomingMessage.GET_PROJECT_FILES:
-          fsService.getAllProjectFiles(env.WORK_DIR).then(async (it) => {
-            if (!it) return;
-
-            const map: Record<string, string> = {};
-
-            // Later send these files 1 by 1 so we dont use whole memory
-            for await (const file of it) {
-              map[file.name] = file.contents || "";
-            }
-
+          fsService.getAllProjectFiles(env.WORK_DIR).then(async (files) => {
             sendResponse(
               {
                 nonce: message.nonce,
-                data: map,
+                data: files,
               },
               ws
             );

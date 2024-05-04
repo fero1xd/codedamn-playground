@@ -27,11 +27,10 @@ function Item({ node }: ItemProps) {
     `file:///${path.startsWith("/") ? path.slice(1) : path}`
   ).toString();
 
-  const setSelectedDir = useSelectedItem((s) => s.setSelectedDir);
-  const setSelectedFile = useSelectedItem((s) => s.setSelectedFile);
-  // const selectedFile = useSelectedItem((s) => s.selectedFile);
+  const { selectedDir, selectedFile, setSelectedDir, setSelectedFile } =
+    useSelectedItem();
 
-  // const isSelected = selectedFile ? selectedFile === uri : "" === path;
+  const isSelected = selectedFile ? selectedFile === uri : selectedDir === path;
   return (
     <>
       <div
@@ -47,7 +46,7 @@ function Item({ node }: ItemProps) {
         }}
         className={cn(
           `flex items-center transition-all ease-out`,
-          `hover:cursor-pointer hover:bg-gray-900`
+          `${isSelected ? "bg-gray-900" : "bg-transparent"} hover:cursor-pointer hover:bg-gray-900`
         )}
         style={{ paddingLeft: `${node.depth * 16}px` }}
       >
@@ -90,5 +89,5 @@ function Nested({ node: dir }: ItemProps) {
     return <p>error fetching contents for {dir.path}</p>;
   }
 
-  return <Children key={dir.path + Math.random()} node={useFullData} />;
+  return <Children key={dir.path + dir.name} node={useFullData} />;
 }

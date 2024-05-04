@@ -19,9 +19,6 @@ const addDepth = (children: Child[], currentDepth: number) => {
 
 export function FileTree({ onReady }: { onReady: () => void }) {
   const { data: treeRoot, isLoading } = useWSQuery(["GENERATE_TREE"]);
-  // const { selectedFile, setSelectedFile, setSelectedDir, selectedDir } =
-  //   useSelectedItem();
-
   const queryClient = useQueryClient();
   const conn = useConnection();
 
@@ -33,15 +30,14 @@ export function FileTree({ onReady }: { onReady: () => void }) {
     const removeListener = conn.addSubscription(
       "REFETCH_DIR",
       (data: ChangeEvent) => {
+        if (data.event === "change") return;
+
         const finalPath =
           path.join(data.path, "..") === treeRoot?.path
             ? ""
             : path.join(data.path, "..");
 
         console.log("change event in file tree", { finalPath });
-
-        if (data.event === "unlinkDir" && finalPath === data.path) {
-        }
 
         if (finalPath === "") {
           queryClient.invalidateQueries({
@@ -85,21 +81,6 @@ export function FileTree({ onReady }: { onReady: () => void }) {
   if (!treeRoot) {
     return <p>error fetching workdir</p>;
   }
-
-  // const onSelect = (child: Child) => {
-  //   if (child.isDir) {
-  //     setSelectedDir(child.path);
-  //     return;
-  //   }
-
-  //   const childUri = monaco.Uri.parse(
-  //     `file:///${child.path.startsWith("/") ? child.path.slice(1) : child.path}`
-  //   ).toString();
-
-  //   if (!selectedFile || selectedFile !== childUri) {
-  //     setSelectedFile(childUri);
-  //   }
-  // };
 
   return <Children node={treeRoot} />;
 }

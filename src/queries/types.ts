@@ -37,6 +37,6 @@ export type Dependencies = {
 };
 
 export type ChangeEvent = {
-  event: "add" | "unlink" | "addDir" | "unlinkDir";
+  event: "add" | "unlink" | "addDir" | "unlinkDir" | "change";
   path: string;
 };
