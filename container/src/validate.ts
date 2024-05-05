@@ -30,6 +30,10 @@ export const incomingMessage = z.discriminatedUnion("event", [
     data: z.object({ cmd: z.string(), sessionId: z.string() }),
   }),
   baseMessage.extend({
+    event: z.literal(IncomingMessage.GET_TYPINGS),
+    data: z.object({ package: z.string() }),
+  }),
+  baseMessage.extend({
     event: z.literal(IncomingMessage.RESIZE_TERMINAL),
     data: z.object({
       cols: z.number(),

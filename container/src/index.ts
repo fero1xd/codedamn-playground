@@ -182,6 +182,17 @@ const main = () => {
               ws
             );
           });
+          break;
+        case IncomingMessage.GET_TYPINGS:
+          const contents = await fsService.getFileContent(message.data.package);
+
+          sendResponse(
+            {
+              nonce: message.nonce,
+              data: contents,
+            },
+            ws
+          );
       }
     });
 

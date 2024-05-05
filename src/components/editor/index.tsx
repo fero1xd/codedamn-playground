@@ -34,9 +34,10 @@ import { useSelectedItem } from "@/stores/selected-item";
 
 type EditorProps = {
   onReady: () => void;
+  onError: () => void;
 };
 
-export function Editor({ onReady }: EditorProps) {
+export function Editor({ onReady, onError }: EditorProps) {
   const { themeLoaded } = useMaterial();
   const editorStates = useRef(new EditorState());
 
@@ -356,29 +357,32 @@ export function Editor({ onReady }: EditorProps) {
 
     console.log("requesting project files");
 
-    conn?.queries.GET_PROJECT_FILES().then(async (files) => {
-      await Promise.all(
-        files.map((f) =>
-          openFile(
-            editorRef.current!,
-            monacoInstance,
+    conn.queries
+      .GET_PROJECT_FILES()
+      .then(async (files) => {
+        await Promise.all(
+          files.map((f) =>
+            openFile(
+              editorRef.current!,
+              monacoInstance,
 
-            monaco.Uri.parse(f.replace("/", "")).toString(),
-            true,
-            true
+              monaco.Uri.parse(f.replace("/", "")).toString(),
+              true,
+              true
+            )
           )
-        )
-      );
+        );
 
-      toast({
-        description: "Loaded all project files",
-      });
+        toast({
+          description: "Loaded all project files",
+        });
 
-      configureTs(monacoInstance);
-      configureJs(monacoInstance);
+        configureTs(monacoInstance);
+        configureJs(monacoInstance);
 
-      onReady();
-    });
+        onReady();
+      })
+      .catch(() => onError());
   }, [conn, conn?.isReady, monacoInstance, hasMounted]);
 
   const resolveDeps = useDebouncedCallback(async (deps: Dependencies) => {

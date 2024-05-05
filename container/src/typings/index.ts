@@ -1,9 +1,9 @@
+import "dotenv/config";
 import { Dependencies, PackageJSON } from "../types";
 import path from "path";
 import { fsService } from "../fs";
 import { readFile } from "fs/promises";
 import * as dts from "dts-bundle";
-import { redis } from "../upstash/redis";
 
 export const bundleTypeDefs = async (deps: Dependencies) => {
   const workDir = await fsService.getWorkDir();
@@ -34,40 +34,43 @@ export const bundleTypeDefs = async (deps: Dependencies) => {
 
       // Check if there is a entry point for types
       if (packageJson.typings || packageJson.types) {
-        const entryPoint = path.join(
-          packagePath,
-          (packageJson.typings || packageJson.types) as string
-        );
+        // const entryPoint = path.join(
+        //   packagePath,
+        //   (packageJson.typings || packageJson.types) as string,
+        //   ""
+        // );
+        const entryPoint = path.join(packagePath, "**/*.d.ts");
 
         console.log(`found entry point for ${dep}`);
 
         const version = deps.dependencies[dep] || deps.devDependencies[dep];
 
-        // const cachedTypes = (await redis.get(`__types__${dep}__${version}`)) as
-        //   | string
-        //   | null;
-
-        // if (cachedTypes) {
-        //   console.log(`${dep}@${version} is in cache`);
-        //   typesDefs[dep] = cachedTypes;
-        //   continue;
-        // }
-
         const typesPath = `/tmp/types/${dep}/${version}/index.d.ts`;
+
+        if (await fsService.exists(typesPath)) {
+          console.log("type def already exists");
+          continue;
+        }
+
         dts.bundle({
           main: entryPoint,
           out: typesPath,
           name: dep.startsWith("@types/") ? dep.replace("@types/", "") : dep,
-          verbose: true,
-          referenceExternals: true,
-          externals: true,
         });
 
         // TODO: Make this in memory later
         const generated = await readFile(typesPath, { encoding: "utf-8" });
-        await redis.set(`__types__${dep}__${version}`, generated);
+        // await redis.set(`__types__${dep}__${version}`, generated);
 
         typesDefs[dep] = generated;
+
+        if (Object.keys(packageJson.dependencies || {}).length > 0) {
+          console.log("found other type defs in dependencies... Bundling them");
+          await bundleTypeDefs({
+            dependencies: packageJson.dependencies,
+            devDependencies: {},
+          });
+        }
       }
       // More cases here
       else {
@@ -80,3 +83,10 @@ export const bundleTypeDefs = async (deps: Dependencies) => {
   }
   return typesDefs;
 };
+
+bundleTypeDefs({
+  dependencies: {
+    "@types/node": "20.11.17",
+  },
+  devDependencies: {},
+});

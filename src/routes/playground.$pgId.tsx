@@ -104,6 +104,13 @@ function Playground() {
                     success: true,
                   }));
                 }}
+                onError={() => {
+                  console.log("**editor on_error**");
+                  setStatus("editor", () => ({
+                    loading: false,
+                    success: false,
+                  }));
+                }}
               />
             }
             fileTree={

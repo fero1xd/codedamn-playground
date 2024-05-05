@@ -6,6 +6,8 @@ export enum IncomingMessage {
   TERMINAL_USER_CMD = "TERMINAL_USER_CMD",
   RESIZE_TERMINAL = "RESIZE_TERMINAL",
   GET_PROJECT_FILES = "GET_PROJECT_FILES",
+
+  GET_TYPINGS = "GET_TYPINGS",
 }
 
 export interface Child extends Node {

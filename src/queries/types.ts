@@ -17,7 +17,8 @@ export type FetchEvents =
   | "GENERATE_TREE"
   | "FILE_CONTENT"
   | "GET_PROJECT_FILES"
-  | "TERMINAL_SESSION_START";
+  | "TERMINAL_SESSION_START"
+  | "GET_TYPINGS";
 
 // From client -> server
 export type WSEvents = "TERMINAL_USER_CMD" | "SAVE_CHANGES";
