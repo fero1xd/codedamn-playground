@@ -34,11 +34,15 @@ export const WSContext = createContext<Conn | null>(null);
 
 type WebSocketProviderProps = PropsWithChildren & {
   playgroundId: string;
+  onConnected: () => void;
+  onFailure: () => void;
 };
 
 export function WebSocketProvider({
   children,
   playgroundId,
+  onConnected,
+  onFailure,
 }: WebSocketProviderProps) {
   const listeners = useRef<Map<string, (data: unknown) => void>>(new Map());
   const subscriptions = useRef<
@@ -56,6 +60,7 @@ export function WebSocketProvider({
         [],
         {
           connectionTimeout: 15000,
+          maxRetries: 5,
         }
       );
       // @ts-expect-error just for dev
@@ -64,11 +69,18 @@ export function WebSocketProvider({
       ws.onopen = () => {
         console.log("ws connection opened");
 
+        onConnected();
         setConn(ws);
         setIsReady(true);
       };
       ws.onclose = () => {
         console.log("ws connection closed");
+
+        if (ws.retryCount >= 5) {
+          onFailure();
+          console.log("reconnection failed");
+        }
+
         setIsReady(false);
       };
       ws.onmessage = (e) => {

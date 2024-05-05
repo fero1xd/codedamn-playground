@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 export type PlaygroundStatus = {
   [x in
     | "terminal"
+    | "ws"
     | "editor"
     | "fileTree"
     | "sentContainerReq"
@@ -15,6 +16,7 @@ export const messageMap: Record<keyof PlaygroundStatus, string> = {
   fileTree: "Fetching project files",
   sentContainerReq: "Sending container request",
   containerBooted: "Waiting for your container to be online",
+  ws: "Establishing websocket connection to the container",
 };
 
 export function usePgLoading() {
@@ -24,6 +26,7 @@ export function usePgLoading() {
     fileTree: { loading: true, success: false },
     sentContainerReq: { loading: true, success: false },
     containerBooted: { loading: true, success: false },
+    ws: { loading: true, success: false },
   });
 
   const isReady = useMemo(() => {

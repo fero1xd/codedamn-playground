@@ -76,7 +76,24 @@ function Playground() {
       {showConfetti && <Confetti />}
 
       {host && status.containerBooted.success && (
-        <WebSocketProvider playgroundId={host}>
+        <WebSocketProvider
+          playgroundId={host}
+          onConnected={() => {
+            if (!status.ws.loading) return;
+            setStatus("ws", () => ({
+              loading: false,
+              success: true,
+            }));
+          }}
+          onFailure={() => {
+            if (!status.ws.loading) return;
+
+            setStatus("ws", () => ({
+              loading: false,
+              success: false,
+            }));
+          }}
+        >
           <Layout
             editor={
               <Editor

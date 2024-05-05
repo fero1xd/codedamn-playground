@@ -84,7 +84,6 @@ const main = () => {
 
   // TODO: Add authentication
   wss.on("connection", (ws) => {
-    const wsId = v4();
     resetIdleTimeout();
 
     console.log("new connection");
