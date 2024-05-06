@@ -8,6 +8,7 @@ export enum IncomingMessage {
   GET_PROJECT_FILES = "GET_PROJECT_FILES",
 
   GET_TYPINGS = "GET_TYPINGS",
+  GET_DEPS = "GET_DEPS",
 }
 
 export interface Child extends Node {
@@ -30,6 +31,7 @@ export enum OutgoingMessageType {
   ADD_FILE = "ADD_FILE",
   REFETCH_DIR = "REFETCH_DIR",
   REFRESH_IFRAME = "REFRESH_IFRAME",
+  PLAYGROUND_PAUSED = "PLAYGROUND_PAUSED",
 }
 
 export type ResponseType = {

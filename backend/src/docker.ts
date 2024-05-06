@@ -149,6 +149,7 @@ export const createPlaygroundContainer = async (
       // Available for users
       VIRTUAL_HOST2: `http://${env.API_IP}/${slug} -> :42069/`,
       VIRTUAL_HOST3: `http://${env.API_IP}/${slug}-42070 -> :42070/`,
+      IDLE_INTERVAL: "0.5",
     };
     const envArray = Object.entries(pgEnv).map(([key, val]) => `${key}=${val}`);
 

@@ -18,7 +18,8 @@ export type FetchEvents =
   | "FILE_CONTENT"
   | "GET_PROJECT_FILES"
   | "TERMINAL_SESSION_START"
-  | "GET_TYPINGS";
+  | "GET_TYPINGS"
+  | "GET_DEPS";
 
 // From client -> server
 export type WSEvents = "TERMINAL_USER_CMD" | "SAVE_CHANGES";
@@ -30,7 +31,8 @@ export type ServerEvent =
   | "FILE_SAVED"
   | "ADD_FILE"
   | "REFETCH_DIR"
-  | "REFRESH_IFRAME";
+  | "REFRESH_IFRAME"
+  | "PLAYGROUND_PAUSED";
 
 export type Dependencies = {
   dependencies: Record<string, string>;

@@ -383,6 +383,18 @@ export function Editor({ onReady, onError }: EditorProps) {
         onReady();
       })
       .catch(() => onError());
+
+    conn.fetchCall<string[]>("GET_DEPS").then((c: string[]) => {
+      const deps: Record<string, string> = {};
+      for (const dep of c) {
+        deps[dep] = "";
+      }
+
+      resolveDeps({
+        dependencies: deps,
+        devDependencies: {},
+      });
+    });
   }, [conn, conn?.isReady, monacoInstance, hasMounted]);
 
   const resolveDeps = useDebouncedCallback(async (deps: Dependencies) => {

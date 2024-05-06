@@ -7,6 +7,7 @@ const REQUIRED_ENV = [
   "VIRTUAL_HOST1",
   "VIRTUAL_HOST2",
   "VIRTUAL_HOST3",
+  "IDLE_INTERVAL",
 ] as const;
 
 type Env = { [X in (typeof REQUIRED_ENV)[number]]: string };

@@ -10,6 +10,7 @@ import {
 import { createContext } from "react";
 import { v4 } from "uuid";
 import ReconnectingWebSocket from "reconnecting-websocket";
+import { ContainerPaused } from "@/components/container-paused";
 
 export type Conn = {
   isReady: boolean;
@@ -23,7 +24,7 @@ export type Conn = {
     ) => Promise<{ sessionId: string }>;
   };
 
-  fetchCall<T = unknown>(key: FetchEvents, data: unknown): Promise<T>;
+  fetchCall<T = unknown>(key: FetchEvents, data?: unknown): Promise<T>;
   addSubscription<T = unknown>(
     event: ServerEvent,
     cb: (data: T) => void
@@ -51,6 +52,7 @@ export function WebSocketProvider({
 
   const [conn, setConn] = useState<ReconnectingWebSocket>();
   const [isReady, setIsReady] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const hasInstance = useRef(false);
 
   useEffect(() => {
@@ -73,8 +75,9 @@ export function WebSocketProvider({
         setConn(ws);
         setIsReady(true);
       };
-      ws.onclose = () => {
+      ws.onclose = (e) => {
         console.log("ws connection closed");
+        console.log(e);
 
         if (ws.retryCount >= 5) {
           onFailure();
@@ -134,14 +137,14 @@ export function WebSocketProvider({
 
   function fetchCall<T = unknown>(
     query: FetchEvents,
-    data: unknown
+    data?: unknown
   ): Promise<T> {
     const nonce = v4();
 
     sendJsonMessage({
       nonce,
       event: query,
-      data,
+      data: data || {},
     });
 
     const p = new Promise<T>((res, rej) => {
@@ -182,6 +185,18 @@ export function WebSocketProvider({
     };
   }
 
+  useEffect(() => {
+    const removeSub = addSubscriptionForServerEvent("PLAYGROUND_PAUSED", () => {
+      console.log("playground paused");
+      setIsPaused(true);
+      conn?.close();
+    });
+
+    return () => {
+      removeSub();
+    };
+  }, [conn]);
+
   return (
     <WSContext.Provider
       value={useMemo(
@@ -212,6 +227,7 @@ export function WebSocketProvider({
         [conn, isReady]
       )}
     >
+      <ContainerPaused open={isPaused} />
       {children}
     </WSContext.Provider>
   );

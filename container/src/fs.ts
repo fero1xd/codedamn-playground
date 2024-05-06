@@ -69,26 +69,33 @@ class FsService {
     });
   }
 
-  async readPackageJsonDeps(
-    packagePath: string
-  ): Promise<Dependencies | undefined> {
+  async readPackageJsonDeps() {
+    const deps = new Set<string>();
+
     try {
-      const file = await fs.readFile(packagePath, { encoding: "utf-8" });
-      const json = JSON.parse(file) as Partial<Dependencies>;
+      const workDir = await this.getWorkDir();
 
-      // const bundledTypes = await bundleTypeDefs({
-      //   dependencies: json.dependencies || {},
-      //   devDependencies: json.devDependencies || {},
-      // });
+      const depsFile = await glob(path.join(workDir, "**/package.json"));
+      for (const depFile of depsFile) {
+        const file = await this.getFileContent(depFile);
+        if (!file) {
+          continue;
+        }
 
-      return {
-        dependencies: json.dependencies || {},
-        devDependencies: json.devDependencies || {},
-      };
+        const json = JSON.parse(file) as Partial<Dependencies>;
+        for (const d of Object.keys({
+          ...(json.dependencies || {}),
+          ...(json.devDependencies || {}),
+        })) {
+          deps.add(d);
+        }
+      }
     } catch (e) {
       console.log("error while reading dep file");
       console.log(e);
     }
+
+    return deps;
   }
 
   async generateFileTree(dirName: string) {

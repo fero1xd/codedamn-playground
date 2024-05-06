@@ -4,6 +4,7 @@ import path from "path";
 import { fsService } from "../fs";
 import { readFile } from "fs/promises";
 import * as dts from "dts-bundle";
+import { env } from "../env";
 
 export const bundleTypeDefs = async (deps: Dependencies) => {
   const workDir = await fsService.getWorkDir();
@@ -84,9 +85,33 @@ export const bundleTypeDefs = async (deps: Dependencies) => {
   return typesDefs;
 };
 
-bundleTypeDefs({
-  dependencies: {
-    "@types/node": "20.11.17",
-  },
-  devDependencies: {},
-});
+export async function getDependenciesForPackage(
+  packageName: string,
+  currentDeps: Set<string> = new Set()
+) {
+  currentDeps.add(packageName);
+
+  const packagePath = path.join(env.WORK_DIR, "node_modules", packageName);
+
+  if (!(await fsService.exists(packagePath))) {
+    console.log("package " + packageName + " doesnt exist");
+    return currentDeps;
+  }
+
+  const packageJsonForDep = path.join(packagePath, "package.json");
+  const packageJson = JSON.parse(
+    await readFile(packageJsonForDep, {
+      encoding: "utf-8",
+    })
+  ) as PackageJSON;
+
+  if (Object.keys(packageJson.dependencies || {}).length > 0) {
+    for (const dep of Object.keys(packageJson.dependencies)) {
+      if (currentDeps.has(dep)) continue;
+
+      await getDependenciesForPackage(dep, currentDeps);
+    }
+  }
+
+  return currentDeps;
+}

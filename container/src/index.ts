@@ -8,6 +8,7 @@ import { TerminalManager } from "./sessions";
 import { v4 } from "uuid";
 import { env } from "./env";
 import { watchPorts } from "./ports";
+import { getDependenciesForPackage } from "./typings";
 
 const main = () => {
   const port = 3001;
@@ -25,7 +26,15 @@ const main = () => {
     if (wss.clients.size > 0) {
       console.log("users are doing nothing... pause the container here");
       // Todo: 'pause" the container here
-      return;
+      wss.clients.forEach((ws) => {
+        sendResponse(
+          {
+            serverEvent: OutgoingMessageType.PLAYGROUND_PAUSED,
+            data: {},
+          },
+          ws
+        );
+      });
     }
 
     process.exit(0);
@@ -36,8 +45,7 @@ const main = () => {
     idleTimeout = setTimeout(terminateProcess, idleInterval);
   };
 
-  // 5 Mins
-  const idleInterval = 5 * 60 * 1000;
+  const idleInterval = Number(env.IDLE_INTERVAL) * 1000 * 60;
 
   fsService.watchForDepsChange((deps) => {
     wss.clients.forEach((c) => {
@@ -184,12 +192,23 @@ const main = () => {
           });
           break;
         case IncomingMessage.GET_TYPINGS:
-          const contents = await fsService.getFileContent(message.data.package);
+          const contents = await getDependenciesForPackage(
+            message.data.package
+          );
 
           sendResponse(
             {
               nonce: message.nonce,
-              data: contents,
+              data: Array.from(contents),
+            },
+            ws
+          );
+          break;
+        case IncomingMessage.GET_DEPS:
+          sendResponse(
+            {
+              nonce: message.nonce,
+              data: Array.from(await fsService.readPackageJsonDeps()),
             },
             ws
           );
