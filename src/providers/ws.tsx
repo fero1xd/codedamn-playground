@@ -11,6 +11,7 @@ import { createContext } from "react";
 import { v4 } from "uuid";
 import ReconnectingWebSocket from "reconnecting-websocket";
 import { ContainerPaused } from "@/components/container-paused";
+import { APPS_WS_URL } from "@/lib/utils";
 
 export type Conn = {
   isReady: boolean;
@@ -58,7 +59,7 @@ export function WebSocketProvider({
   useEffect(() => {
     if (!conn && !hasInstance.current) {
       const ws = new ReconnectingWebSocket(
-        `ws://${import.meta.env.VITE_API_IP}/${playgroundId}-3001`,
+        `${APPS_WS_URL}/${playgroundId}-3001/`,
         [],
         {
           connectionTimeout: 15000,

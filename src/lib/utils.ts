@@ -6,3 +6,5 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const API_URL = import.meta.env.VITE_API_URL;
+export const APPS_URL = import.meta.env.VITE_APPS_URL;
+export const APPS_WS_URL = APPS_URL.replace("https", "wss");

@@ -145,11 +145,11 @@ export const createPlaygroundContainer = async (
       UPSTASH_REDIS_REST_TOKEN: env.UPSTASH_REDIS_REST_TOKEN,
       WORK_DIR: "/home/slave/app",
       DEPS_FILE: "package.json",
-      VIRTUAL_HOST1: `ws://${env.API_IP}/${slug}-3001 -> :3001/`,
+      VIRTUAL_HOST1: `wss://${env.API_IP}/${slug}-3001 -> :3001/`,
       // Available for users
-      VIRTUAL_HOST2: `http://${env.API_IP}/${slug} -> :42069/`,
-      VIRTUAL_HOST3: `http://${env.API_IP}/${slug}-42070 -> :42070/`,
-      IDLE_INTERVAL: "0.5",
+      VIRTUAL_HOST2: `https://${env.API_IP}/${slug} -> :42069/`,
+      VIRTUAL_HOST3: `https://${env.API_IP}/${slug}-42070 -> :42070/`,
+      IDLE_INTERVAL: "3",
     };
     const envArray = Object.entries(pgEnv).map(([key, val]) => `${key}=${val}`);
 

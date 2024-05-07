@@ -52,7 +52,7 @@ const main = () => {
       sendResponse(
         {
           serverEvent: OutgoingMessageType.INSTALL_DEPS,
-          data: deps,
+          data: Array.from(deps),
         },
         c
       );

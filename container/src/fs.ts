@@ -7,7 +7,7 @@ import _ from "lodash";
 import { glob } from "glob";
 
 class FsService {
-  async watchForDepsChange(cb: (types: Dependencies) => void) {
+  async watchForDepsChange(cb: (types: Set<string>) => void) {
     // Will ensure that home directory is always present
     const workDir = await this.getWorkDir();
 
@@ -16,20 +16,18 @@ class FsService {
     });
     console.log("watching for deps change");
 
-    let lastSeen: Dependencies = {
-      devDependencies: {},
-      dependencies: {},
-    };
+    let lastSeen = new Set<string>();
 
-    watcher.on("change", async (filePath) => {
+    watcher.on("change", async (path) => {
       try {
-        const deps = await this.readPackageJsonDeps(filePath);
+        const deps = await this.readPackageJsonDeps(path);
         if (!deps) return;
 
         if (_.isEqual(lastSeen, deps)) {
           return;
         }
-        lastSeen = { ...deps };
+
+        lastSeen = new Set(deps);
         cb(deps);
       } catch (e) {
         console.log("IO error while watching deps file");
@@ -69,13 +67,13 @@ class FsService {
     });
   }
 
-  async readPackageJsonDeps() {
+  async readPackageJsonDeps(p?: string) {
     const deps = new Set<string>();
 
     try {
       const workDir = await this.getWorkDir();
 
-      const depsFile = await glob(path.join(workDir, "**/package.json"));
+      const depsFile = await glob(p || path.join(workDir, "**/package.json"));
       for (const depFile of depsFile) {
         const file = await this.getFileContent(depFile);
         if (!file) {
