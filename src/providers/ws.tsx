@@ -11,7 +11,6 @@ import { createContext } from "react";
 import { v4 } from "uuid";
 import ReconnectingWebSocket from "reconnecting-websocket";
 import { ContainerPaused } from "@/components/container-paused";
-import { APPS_WS_URL } from "@/lib/utils";
 
 export type Conn = {
   isReady: boolean;

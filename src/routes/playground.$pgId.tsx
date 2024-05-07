@@ -11,7 +11,7 @@ import { usePgLoading } from "@/hooks/use-pg-loading";
 import { LoadingPanel } from "@/playground/loading";
 import { WebSocketProvider } from "@/providers/ws";
 import Confetti from "react-confetti";
-import { API_URL, APPS_URL } from "@/lib/utils";
+import { API_URL } from "@/lib/utils";
 
 export const Route = createFileRoute("/playground/$pgId")({
   component: Playground,
