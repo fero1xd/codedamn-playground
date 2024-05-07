@@ -59,7 +59,7 @@ export function WebSocketProvider({
   useEffect(() => {
     if (!conn && !hasInstance.current) {
       const ws = new ReconnectingWebSocket(
-        `${APPS_WS_URL}/${playgroundId}-3001/`,
+        `wss://${playgroundId}-3001.app.soketto.dev`,
         [],
         {
           connectionTimeout: 15000,

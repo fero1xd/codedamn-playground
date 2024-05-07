@@ -140,7 +140,9 @@ function Playground() {
                 }}
               />
             }
-            preview={<Browser containerUrl={`${APPS_URL}/${host}/`} />}
+            preview={
+              <Browser containerUrl={`https://${host}.app.soketto.dev`} />
+            }
             onLayout={() => {
               fitTerm();
             }}
