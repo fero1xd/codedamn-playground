@@ -11,6 +11,7 @@ export function Browser({ containerUrl }: { containerUrl: string }) {
   useEffect(() => {
     if (!conn) return;
 
+    // @ts-expect-error For dev
     window.iframe = ref.current;
 
     const remove = conn.addSubscription("REFRESH_IFRAME", () => {
