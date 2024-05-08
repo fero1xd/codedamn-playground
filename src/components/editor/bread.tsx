@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, Fragment } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -25,12 +25,12 @@ export function Bread({
       <BreadcrumbList className="text-xs gap-1 sm:gap-0.5 pt-2">
         {parts.length > 1 &&
           parts.map((p, i) => (
-            <>
+            <Fragment key={i}>
               <BreadcrumbItem key={p + Math.random()}>{p}</BreadcrumbItem>
               {i !== parts.length - 1 && (
                 <BreadcrumbSeparator key={p + Math.random()} />
               )}
-            </>
+            </Fragment>
           ))}
       </BreadcrumbList>
     </Breadcrumb>

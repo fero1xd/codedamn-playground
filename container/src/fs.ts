@@ -5,6 +5,7 @@ import chokidar from "chokidar";
 import { env } from "./env";
 import _ from "lodash";
 import { glob } from "glob";
+import { minimatch } from "minimatch";
 
 class FsService {
   async watchForDepsChange(cb: (types: Set<string>) => void) {
@@ -13,6 +14,7 @@ class FsService {
 
     const watcher = chokidar.watch(path.join(workDir, "**/package.json"), {
       ignoreInitial: true,
+      ignored: ["/**/node_modules/**"],
     });
     console.log("watching for deps change");
 
@@ -39,31 +41,21 @@ class FsService {
   async watchWorkDir(
     cb: (
       event: "change" | "add" | "addDir" | "unlink" | "unlinkDir",
-      p: string
+      pth: string,
+      shouldFetch: boolean
     ) => void
   ) {
     const workDir = await this.getWorkDir();
     const watcher = chokidar.watch(workDir, {
       ignoreInitial: true,
-      // Ignore all dot files/folders and everything *inside* node_modules folder
       ignored: (p) => {
         if (/(^|[\/\\])\../.test(p)) return true;
-
-        if (p === path.join(workDir, "node_modules")) {
-          return false;
-        }
-        if (path.basename(p) === "node_modules") {
-          return false;
-        }
-
-        return p.startsWith(path.join(workDir, "node_modules"));
+        return minimatch(p, "**/node_modules/**");
       },
     });
 
     watcher.on("all", (event, path) => {
-      // if (event === "change") return;
-
-      cb(event, path);
+      cb(event, path, this._isProjectFile(path));
     });
   }
 
@@ -73,7 +65,9 @@ class FsService {
     try {
       const workDir = await this.getWorkDir();
 
-      const depsFile = await glob(p || path.join(workDir, "**/package.json"));
+      const depsFile = await glob(p || path.join(workDir, "**/package.json"), {
+        ignore: ["/**/node_modules/**"],
+      });
       for (const depFile of depsFile) {
         const file = await this.getFileContent(depFile);
         if (!file) {
@@ -128,9 +122,15 @@ class FsService {
 
   async getFileContent(filePath: string) {
     try {
-      const c = await fs.readFile(filePath, { encoding: "utf-8" });
+      const contents = await fs.readFile(filePath, { encoding: "utf-8" });
+      // if (minimatch(filePath, "**/*(bun.lockb)")) {
+      //   return {
+      //     shouldLoad: false,
+      //     contents: "",
+      //   };
+      // }
 
-      return c;
+      return contents;
     } catch (e) {
       console.log("error while fetching content for a file");
       console.log(e);
@@ -176,10 +176,10 @@ class FsService {
   }
 
   // Using this for adding models
-  async getAllProjectFiles(dirPath: string) {
+  async getAllProjectFiles() {
     try {
-      const tsFiles = await glob(dirPath + "/**/*.*", {
-        ignore: [path.join(dirPath, "**/node_modules/**")],
+      const tsFiles = await glob(env.WORK_DIR + "/**/*(*.ts|*.json|*.js)", {
+        ignore: ["/**/node_modules/**", "/**/package-lock.json"],
       });
 
       return tsFiles;
@@ -188,6 +188,11 @@ class FsService {
       console.log(e);
     }
   }
+
+  private _isProjectFile(p: string) {
+    return minimatch(p, path.join(env.WORK_DIR, "/**/*(*.ts|*.json|*.js)"));
+  }
 }
 
 export const fsService = new FsService();
+fsService.watchForDepsChange((c) => console.log(c));

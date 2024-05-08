@@ -11,6 +11,8 @@ export function Browser({ containerUrl }: { containerUrl: string }) {
   useEffect(() => {
     if (!conn) return;
 
+    window.iframe = ref.current;
+
     const remove = conn.addSubscription("REFRESH_IFRAME", () => {
       console.log("refreshing iframe");
       refreshIframe();

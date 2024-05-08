@@ -59,8 +59,7 @@ const main = () => {
     });
   });
 
-  fsService.watchWorkDir((event, path) => {
-    console.log(event, path);
+  fsService.watchWorkDir((event, path, shouldFetch) => {
     wss.clients.forEach((ws) => {
       sendResponse(
         {
@@ -69,6 +68,7 @@ const main = () => {
           data: {
             event,
             path,
+            shouldFetch,
           },
         },
         ws
@@ -181,7 +181,7 @@ const main = () => {
           terminalManager.resize(message.data.sessionId, message.data);
           break;
         case IncomingMessage.GET_PROJECT_FILES:
-          fsService.getAllProjectFiles(env.WORK_DIR).then(async (files) => {
+          fsService.getAllProjectFiles().then(async (files) => {
             sendResponse(
               {
                 nonce: message.nonce,

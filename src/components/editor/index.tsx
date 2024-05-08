@@ -65,7 +65,6 @@ export function Editor({ onReady, onError }: EditorProps) {
 
       const currentModel = editor.getModel();
       if (currentModel) {
-        console.log("Storing view state");
         editorStates.current.set(currentModel, editor);
       }
 
@@ -82,7 +81,6 @@ export function Editor({ onReady, onError }: EditorProps) {
 
         for (const libPath of Object.keys(allLibs)) {
           if (libPath === fileUri) {
-            console.log("**found match**");
             allLibs[libPath] = {
               version: allLibs[libPath].version,
               content: contents,
@@ -90,8 +88,6 @@ export function Editor({ onReady, onError }: EditorProps) {
             break;
           }
         }
-
-        console.log(allLibs, fileUri);
 
         m.languages.typescript.typescriptDefaults.setExtraLibs(
           Object.entries(allLibs).map((e) => ({
@@ -151,10 +147,6 @@ export function Editor({ onReady, onError }: EditorProps) {
 
     listeners.push(
       conn.addSubscription("FILE_SAVED", (msg: string) => {
-        // toast({
-        //   title: "File Saved",
-        //   description: "Your changes are successfuly saved",
-        // });
         console.log("server event file saved: " + msg);
       })
     );
@@ -165,8 +157,8 @@ export function Editor({ onReady, onError }: EditorProps) {
         async (data: {
           event: "add" | "addDir" | "unlink" | "unlinkDir" | "change";
           path: string;
+          shouldFetch: boolean;
         }) => {
-          console.log("changes in work dir: editor", data);
           const treeRoot = await queryClient.getQueryData<Root>([
             "GENERATE_TREE",
           ]);
@@ -177,7 +169,8 @@ export function Editor({ onReady, onError }: EditorProps) {
           );
 
           if (data.event === "add") {
-            if (!editorRef.current || !monacoInstance) return;
+            if (!editorRef.current || !monacoInstance || !data.shouldFetch)
+              return;
 
             openFile(
               editorRef.current,
@@ -203,7 +196,8 @@ export function Editor({ onReady, onError }: EditorProps) {
               doesExists.dispose();
             }
           } else if (data.event === "change") {
-            if (!editorRef.current || !monacoInstance) return;
+            if (!editorRef.current || !monacoInstance || !data.shouldFetch)
+              return;
 
             const currentModel = await editorRef.current?.getModel();
             if (!currentModel) return;
@@ -317,23 +311,13 @@ export function Editor({ onReady, onError }: EditorProps) {
       return result; // always return the base result
     };
 
-    // @ts-expect-error tttt
-    const { default: highlighter } = await import("monaco-jsx-highlighter");
-    console.log(highlighter);
-
     // Language configurations start here
     configureHtml(e, m);
     configureCss(m);
     configureJson(m);
     configureMd(m);
     // Language configurations end here
-    setupKeybindings(e, () => {
-      const currentModel = editorRef.current?.getModel();
-      if (!currentModel) return;
-
-      saveChanges.cancel();
-      saveChangesRaw(currentModel.uri.path, currentModel.getValue());
-    });
+    setupKeybindings(e);
 
     setMounted(true);
 
@@ -415,7 +399,6 @@ export function Editor({ onReady, onError }: EditorProps) {
 
   const saveChangesRaw = async (filePath: string, contents: string) => {
     if (!conn || !conn.isReady) return;
-    console.log("SENDING SAVE CHANGES", filePath);
 
     conn.sendJsonMessage({
       nonce: "__ignored__",
@@ -427,7 +410,7 @@ export function Editor({ onReady, onError }: EditorProps) {
     });
   };
 
-  const saveChanges = useDebouncedCallback(saveChangesRaw, 5000);
+  const saveChanges = useDebouncedCallback(saveChangesRaw, 1000);
 
   if (!themeLoaded) {
     return (

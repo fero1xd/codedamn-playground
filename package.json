@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@babel/parser": "^7.24.4",
-    "@babel/traverse": "^7.24.1",
+    "@babel/parser": "^7.24.5",
+    "@babel/traverse": "^7.24.5",
     "@hookform/resolvers": "^3.3.4",
     "@monaco-editor/react": "^4.6.0",
     "@radix-ui/react-alert-dialog": "^1.0.5",
