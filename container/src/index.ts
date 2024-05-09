@@ -9,7 +9,7 @@ import { v4 } from "uuid";
 import { env } from "./env";
 import { watchPorts } from "./ports";
 import { getDependenciesForPackage } from "./typings";
-import { saveToS3 } from "./aws";
+import { awsService } from "./aws";
 
 const main = () => {
   const port = 3001;
@@ -19,7 +19,7 @@ const main = () => {
   });
 
   // Saves everything to s3 every 1 min
-  setInterval(saveToS3, 1 * 1000 * 60);
+  setInterval(() => awsService.saveToS3(), 1 * 1000 * 60);
 
   const terminalManager = new TerminalManager();
 
