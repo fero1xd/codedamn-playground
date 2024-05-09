@@ -245,7 +245,7 @@ export function Editor({ onReady, onError }: EditorProps) {
     return () => {
       listeners.forEach((l) => l());
     };
-  }, [monacoInstance]);
+  }, [monacoInstance, conn?.isReady]);
 
   useEffect(() => {
     if (!editorRef.current || !monacoInstance || !selectedFile) return;
