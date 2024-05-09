@@ -28,7 +28,7 @@ import { useToast } from "../ui/use-toast";
 import { Bread } from "./bread";
 import { useWSQuery } from "@/hooks/use-ws-query";
 import { useQueryClient } from "@tanstack/react-query";
-import { Dependencies, Root } from "@/queries/types";
+import { ChangeEvent, Dependencies, Root } from "@/queries/types";
 import { Placeholder } from "./placeholder";
 import { useSelectedItem } from "@/stores/selected-item";
 
@@ -139,6 +139,9 @@ export function Editor({ onReady, onError }: EditorProps) {
     },
     [conn, openedModels]
   );
+  const getExtraLibs = useCallback(() => {
+    return monacoInstance?.languages.typescript.typescriptDefaults.getExtraLibs();
+  }, [monacoInstance]);
 
   useEffect(() => {
     if (!conn) return;
@@ -152,26 +155,74 @@ export function Editor({ onReady, onError }: EditorProps) {
     );
 
     listeners.push(
-      conn.addSubscription(
-        "REFETCH_DIR",
-        async (data: {
-          event: "add" | "addDir" | "unlink" | "unlinkDir" | "change";
-          path: string;
-          shouldFetch: boolean;
-        }) => {
-          const treeRoot = await queryClient.getQueryData<Root>([
-            "GENERATE_TREE",
-          ]);
-          if (!treeRoot) return;
+      conn.addSubscription("REFETCH_DIR", async (data: ChangeEvent) => {
+        console.log("Refetch dir", data);
+        const treeRoot = await queryClient.getQueryData<Root>([
+          "GENERATE_TREE",
+        ]);
+        if (!treeRoot) return;
 
-          const uri = monaco.Uri.parse(
-            `file:///${data.path.startsWith("/") ? data.path.slice(1) : data.path}`
+        const uri = monaco.Uri.parse(
+          `file:///${data.path.startsWith("/") ? data.path.slice(1) : data.path}`
+        );
+
+        if (data.event === "add") {
+          if (!editorRef.current || !monacoInstance || !data.shouldFetch)
+            return;
+
+          openFile(
+            editorRef.current,
+            monacoInstance,
+            uri.toString(),
+            true,
+            true
+          );
+        } else if (data.event === "unlink") {
+          if (!editorRef.current || !monacoInstance) return;
+
+          const doesExists = monacoInstance.editor.getModel(uri);
+
+          const libs = getExtraLibs() || {};
+          delete libs[uri.toString()];
+
+          monacoInstance.languages.typescript.typescriptDefaults.setExtraLibs(
+            Object.entries(libs).map((e) => ({
+              content: e[1].content,
+              filePath: e[0],
+            }))
           );
 
-          if (data.event === "add") {
-            if (!editorRef.current || !monacoInstance || !data.shouldFetch)
-              return;
+          if (doesExists) {
+            console.log("unlinking/disposing model", data.path);
 
+            setOpenedModels((prevModels) =>
+              prevModels.filter(
+                (p) => p.uri.toString() !== doesExists.uri.toString()
+              )
+            );
+
+            doesExists.dispose();
+          }
+        } else if (data.event === "change") {
+          if (!editorRef.current || !monacoInstance || !data.shouldFetch)
+            return;
+
+          const currentModel = await editorRef.current?.getModel();
+          if (!currentModel) return;
+
+          if (currentModel.uri.toString() === uri.toString()) {
+            const newContents = await conn.fetchCall("FILE_CONTENT", {
+              filePath: data.path,
+            });
+
+            if (newContents !== currentModel.getValue()) {
+              toast({
+                title: "Alert",
+                description:
+                  "Their are changes in the current file, saving the file would overwrite them!",
+              });
+            }
+          } else {
             openFile(
               editorRef.current,
               monacoInstance,
@@ -179,53 +230,9 @@ export function Editor({ onReady, onError }: EditorProps) {
               true,
               true
             );
-          } else if (data.event === "unlink") {
-            if (!editorRef.current || !monacoInstance) return;
-
-            const doesExists = monacoInstance.editor.getModel(uri);
-
-            if (doesExists) {
-              console.log("unlinking/disposing model", data.path);
-
-              setOpenedModels((prevModels) =>
-                prevModels.filter(
-                  (p) => p.uri.toString() !== doesExists.uri.toString()
-                )
-              );
-
-              doesExists.dispose();
-            }
-          } else if (data.event === "change") {
-            if (!editorRef.current || !monacoInstance || !data.shouldFetch)
-              return;
-
-            const currentModel = await editorRef.current?.getModel();
-            if (!currentModel) return;
-
-            if (currentModel.uri.toString() === uri.toString()) {
-              const newContents = await conn.fetchCall("FILE_CONTENT", {
-                filePath: data.path,
-              });
-
-              if (newContents !== currentModel.getValue()) {
-                toast({
-                  title: "Alert",
-                  description:
-                    "Their are changes in the current file, saving the file would overwrite them!",
-                });
-              }
-            } else {
-              openFile(
-                editorRef.current,
-                monacoInstance,
-                uri.toString(),
-                true,
-                true
-              );
-            }
           }
         }
-      )
+      })
     );
 
     listeners.push(

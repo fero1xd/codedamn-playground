@@ -150,7 +150,13 @@ export const createPlaygroundContainer = async (
       VIRTUAL_HOST2: `http://${slug}.app.soketto.dev -> :42069`,
       VIRTUAL_HOST3: `ws://${slug}.app.soketto.dev -> :42069`,
       VIRTUAL_HOST4: `http://${slug}-42070.app.soketto.dev -> :42070`,
-      IDLE_INTERVAL: "3",
+      IDLE_INTERVAL: "5",
+
+      PG_ID: id,
+      BUCKET: env.BUCKET,
+      S3_ACCESS_TOKEN: env.ACCESS_KEY,
+      S3_SECRET: env.SECRET_KEY,
+      REGION: env.REGION,
     };
     const envArray = Object.entries(pgEnv).map(([key, val]) => `${key}=${val}`);
 

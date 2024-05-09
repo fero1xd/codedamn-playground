@@ -2,6 +2,7 @@ FROM node:20.12-bullseye as base
 
 WORKDIR /opt/driver
 
+
 # Install packages
 RUN apt-get update -y && \
     apt-get upgrade -y && \
@@ -36,20 +37,31 @@ RUN npm run build
 FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /opt/driver/dist/ ./dist
+COPY --from=prerelease /opt/driver/entry.sh ./entry.sh
+RUN chmod +x ./entry.sh
 
 RUN useradd -ms /bin/bash slave
+
 USER slave
+WORKDIR /home/slave
+
+ARG AWS_ACCESS_KEY
+ARG AWS_SECRET_KEY
+
+RUN mkdir /home/slave/.aws
+RUN echo "[default]\naws_access_key_id = $AWS_ACCESS_KEY\naws_secret_access_key = $AWS_SECRET_KEY\n"> /home/slave/.aws/credentials
+
+#RUN echo "[default]
+#region = ap-south-1" > /home/slave/.aws/config
 
 RUN mkdir /home/slave/app
 RUN echo "PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '" >> ~/.bashrc
 
-# RUN mkdir ~/.npm-global
-# RUN npm config set prefix '~/.npm-global'
-# RUN touch ~/.profile
-# RUN echo "export PATH=~/.npm-global/bin:$PATH" > ~/.profile
-# RUN source ~/.profile
+# Install aws-cli
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+RUN unzip awscliv2.zip
+RUN ./aws/install -i ~/.local/aws-cli -b ~/.local/bin
 
+EXPOSE 3001 42069 42070
 
-EXPOSE 3001 42069 42070 
-CMD ["node", "dist/index.mjs"]
-
+CMD ["/opt/driver/entry.sh"]

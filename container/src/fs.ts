@@ -195,4 +195,3 @@ class FsService {
 }
 
 export const fsService = new FsService();
-fsService.watchForDepsChange((c) => console.log(c));

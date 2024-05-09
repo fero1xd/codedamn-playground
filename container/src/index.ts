@@ -9,6 +9,7 @@ import { v4 } from "uuid";
 import { env } from "./env";
 import { watchPorts } from "./ports";
 import { getDependenciesForPackage } from "./typings";
+import { saveToS3 } from "./aws";
 
 const main = () => {
   const port = 3001;
@@ -16,6 +17,9 @@ const main = () => {
     port,
     host: "0.0.0.0",
   });
+
+  // Saves everything to s3 every 1 min
+  setInterval(saveToS3, 1 * 1000 * 60);
 
   const terminalManager = new TerminalManager();
 
@@ -93,24 +97,6 @@ const main = () => {
   // TODO: Add authentication
   wss.on("connection", (ws) => {
     resetIdleTimeout();
-
-    console.log("new connection");
-
-    // fsService
-    //   .readPackageJsonDeps(path.join(env.WORK_DIR, env.DEPS_FILE))
-    //   .then((deps) => {
-    //     if (!deps) return;
-
-    //     console.log("sending type defs");
-
-    //     sendResponse(
-    //       {
-    //         serverEvent: OutgoingMessageType.INSTALL_DEPS,
-    //         data: deps,
-    //       },
-    //       ws
-    //     );
-    //   });
 
     ws.on("message", async (data, isBinary) => {
       if (isBinary) return;

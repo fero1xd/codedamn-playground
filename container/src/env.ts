@@ -8,6 +8,11 @@ const REQUIRED_ENV = [
   "VIRTUAL_HOST2",
   "VIRTUAL_HOST3",
   "IDLE_INTERVAL",
+  "PG_ID",
+  "REGION",
+  "BUCKET",
+  "S3_ACCESS_TOKEN",
+  "S3_SECRET",
 ] as const;
 
 type Env = { [X in (typeof REQUIRED_ENV)[number]]: string };
