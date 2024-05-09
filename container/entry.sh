@@ -5,6 +5,6 @@ cd /opt/driver
 rm -rf ~/.local/aws-cli
 rm ~/.local/bin/aws
 rm ~/.local/bin/aws_completer
-rm -rf ~/.aws ~/aws ~/awscliv2.zip
+rm -rf ~/aws ~/awscliv2.zip
 
 node dist/index.mjs

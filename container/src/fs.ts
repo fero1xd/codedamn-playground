@@ -178,9 +178,12 @@ class FsService {
   // Using this for adding models
   async getAllProjectFiles() {
     try {
-      const tsFiles = await glob(env.WORK_DIR + "/**/*(*.ts|*.json|*.js)", {
-        ignore: ["/**/node_modules/**", "/**/package-lock.json"],
-      });
+      const tsFiles = await glob(
+        env.WORK_DIR + "/**/*(*.ts|*.json|*.js|*.jsx|*.tsx)",
+        {
+          ignore: ["/**/node_modules/**", "/**/package-lock.json"],
+        }
+      );
 
       return tsFiles;
     } catch (e) {
@@ -190,7 +193,10 @@ class FsService {
   }
 
   private _isProjectFile(p: string) {
-    return minimatch(p, path.join(env.WORK_DIR, "/**/*(*.ts|*.json|*.js)"));
+    return minimatch(
+      p,
+      path.join(env.WORK_DIR, "/**/*(*.ts|*.json|*.js|*.tsx|*.jsx)")
+    );
   }
 }
 
