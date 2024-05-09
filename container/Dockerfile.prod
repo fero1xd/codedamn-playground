@@ -45,15 +45,6 @@ RUN useradd -ms /bin/bash slave
 USER slave
 WORKDIR /home/slave
 
-ARG AWS_ACCESS_KEY
-ARG AWS_SECRET_KEY
-
-RUN mkdir /home/slave/.aws
-RUN echo "[default]\naws_access_key_id = $AWS_ACCESS_KEY\naws_secret_access_key = $AWS_SECRET_KEY\n"> /home/slave/.aws/credentials
-
-#RUN echo "[default]
-#region = ap-south-1" > /home/slave/.aws/config
-
 RUN mkdir /home/slave/app
 RUN echo "PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '" >> ~/.bashrc
 

@@ -19,8 +19,8 @@ class AwsService {
     this._s3 = new S3({
       region: env.REGION,
       credentials: {
-        accessKeyId: env.S3_ACCESS_TOKEN,
-        secretAccessKey: env.S3_SECRET,
+        accessKeyId: env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
       },
     });
     this._filesInS3 = new Set();

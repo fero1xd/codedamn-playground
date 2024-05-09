@@ -154,8 +154,8 @@ export const createPlaygroundContainer = async (
 
       PG_ID: id,
       BUCKET: env.BUCKET,
-      S3_ACCESS_TOKEN: env.ACCESS_KEY,
-      S3_SECRET: env.SECRET_KEY,
+      AWS_ACCESS_KEY_ID: env.ACCESS_KEY,
+      AWS_SECRET_ACCESS_KEY: env.SECRET_KEY,
       REGION: env.REGION,
     };
     const envArray = Object.entries(pgEnv).map(([key, val]) => `${key}=${val}`);

@@ -11,8 +11,8 @@ const REQUIRED_ENV = [
   "PG_ID",
   "REGION",
   "BUCKET",
-  "S3_ACCESS_TOKEN",
-  "S3_SECRET",
+  "AWS_ACCESS_KEY_ID",
+  "AWS_SECRET_ACCESS_KEY",
 ] as const;
 
 type Env = { [X in (typeof REQUIRED_ENV)[number]]: string };
