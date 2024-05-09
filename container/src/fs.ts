@@ -49,7 +49,7 @@ class FsService {
     const watcher = chokidar.watch(workDir, {
       ignoreInitial: true,
       ignored: (p) => {
-        if (/(^|[\/\\])\../.test(p)) return true;
+        // if (/(^|[\/\\])\../.test(p)) return true;
         return minimatch(p, "**/node_modules/**");
       },
     });
