@@ -50,7 +50,7 @@ class FsService {
       ignoreInitial: true,
       ignored: (p) => {
         // if (/(^|[\/\\])\../.test(p)) return true;
-        return minimatch(p, "**/node_modules/**");
+        return minimatch(p, "/**/node_modules/**", { dot: true });
       },
     });
 
