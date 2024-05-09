@@ -1,6 +1,6 @@
-import WebSocket from 'ws';
-import { type ResponseType } from './types';
-import { incomingMessage } from './validate';
+import WebSocket from "ws";
+import { type ResponseType } from "./types";
+import { incomingMessage } from "./validate";
 
 export const parseMessage = (json: Record<string, unknown>) => {
   try {

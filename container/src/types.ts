@@ -1,3 +1,5 @@
+import type WebSocket from "ws";
+
 export enum IncomingMessage {
   GENERATE_TREE = "GENERATE_TREE",
   FILE_CONTENT = "FILE_CONTENT",
@@ -49,4 +51,8 @@ export type PackageJSON = Dependencies & {
   // Types and typings are synonymous to each other
   typings?: string;
   types?: string;
+};
+
+export type WebSocketWithKeepAlive = WebSocket & {
+  isAlive: boolean;
 };

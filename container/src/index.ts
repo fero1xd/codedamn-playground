@@ -2,7 +2,11 @@ import "dotenv/config";
 import { WebSocketServer } from "ws";
 import { parseJSON } from "./utils";
 import { parseMessage, sendResponse } from "./ws";
-import { IncomingMessage, OutgoingMessageType } from "./types";
+import {
+  IncomingMessage,
+  OutgoingMessageType,
+  WebSocketWithKeepAlive,
+} from "./types";
 import { fsService } from "./fs";
 import { TerminalManager } from "./sessions";
 import { v4 } from "uuid";
@@ -18,11 +22,7 @@ const main = () => {
     host: "0.0.0.0",
   });
 
-  // Saves everything to s3 every 1 min
-  setInterval(() => awsService.saveToS3(), 1 * 1000 * 60);
-
   const terminalManager = new TerminalManager();
-
   let idleTimeout: NodeJS.Timeout | null = null;
 
   const terminateProcess = () => {
@@ -95,7 +95,9 @@ const main = () => {
   });
 
   // TODO: Add authentication
-  wss.on("connection", (ws) => {
+  wss.on("connection", (ws: WebSocketWithKeepAlive) => {
+    ws.isAlive = true;
+
     resetIdleTimeout();
 
     ws.on("message", async (data, isBinary) => {
@@ -204,10 +206,32 @@ const main = () => {
     ws.on("close", () => {
       console.log("disconnected");
     });
+
+    ws.on("pong", () => {
+      ws.isAlive = true;
+    });
   });
 
   wss.on("listening", () => {
     console.log("Container listening on port " + port);
+  });
+
+  const deadConnectionsInterval = setInterval(() => {
+    // @ts-expect-error Using custom types
+    wss.clients.forEach((ws: WebSocketWithKeepAlive) => {
+      if (ws.isAlive === false) return ws.terminate();
+
+      ws.isAlive = false;
+      ws.ping();
+    });
+  }, 30 * 1000);
+
+  // Saves everything to s3 every 1 min
+  const s3Interval = setInterval(() => awsService.saveToS3(), 1 * 1000 * 60);
+
+  wss.on("close", () => {
+    clearInterval(deadConnectionsInterval);
+    clearInterval(s3Interval);
   });
 };
 

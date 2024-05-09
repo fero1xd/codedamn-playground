@@ -88,7 +88,14 @@ export function TerminalX({
   }, [fitTerm]);
 
   useEffect(() => {
-    if (!dimensions || !conn || !conn.isReady || !terminal) return;
+    if (
+      !dimensions ||
+      !conn ||
+      !conn.isReady ||
+      !terminal ||
+      !currentSessionId.current
+    )
+      return;
 
     conn.sendJsonMessage({
       event: "RESIZE_TERMINAL",
