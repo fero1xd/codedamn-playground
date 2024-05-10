@@ -73,6 +73,7 @@ class AwsService {
       }
 
       for (const file of allItems) {
+        console.log(file);
         const cmd = new PutObjectCommand({
           Bucket: env.BUCKET,
           Key: `${env.PG_ID}/${file.replace(env.WORK_DIR + "/", "")}`,

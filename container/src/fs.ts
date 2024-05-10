@@ -49,8 +49,10 @@ class FsService {
     const watcher = chokidar.watch(workDir, {
       ignoreInitial: true,
       ignored: (p) => {
-        // if (/(^|[\/\\])\../.test(p)) return true;
-        return minimatch(p, "/**/node_modules/**", { dot: true });
+        return (
+          minimatch(p, "/**/node_modules/**", { dot: true }) ||
+          minimatch(p, "/**/.??*/**")
+        );
       },
     });
 
@@ -92,7 +94,11 @@ class FsService {
 
   async generateFileTree(dirName: string) {
     try {
-      const contents = await fs.readdir(dirName, { withFileTypes: true });
+      // const contents = await fs.readdir(dirName, { withFileTypes: true });
+      const contents = await glob(env.WORK_DIR + "/*", {
+        dot: true,
+        withFileTypes: true,
+      });
 
       const sortedContents = contents.sort(
         (a, b) => (a.isDirectory() ? 0 : 1) - (b.isDirectory() ? 0 : 1)
