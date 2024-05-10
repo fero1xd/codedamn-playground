@@ -21,6 +21,7 @@ export class TerminalManager {
     const args = isDocker() ? [] : ["--login"];
 
     const prevSession = this.sessions[id];
+
     if (prevSession) {
       prevSession.removeListener.dispose();
 
@@ -37,8 +38,6 @@ export class TerminalManager {
       cwd: env.WORK_DIR,
       env: this._env,
     });
-
-    //    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
 
     const removeListener = term.onData(onData);
     this.sessions[id] = { term, removeListener };
@@ -60,6 +59,7 @@ export class TerminalManager {
 
   clear(terminalId: string) {
     this.sessions[terminalId]?.term.kill();
+    this.sessions[terminalId]?.removeListener.dispose();
     delete this.sessions[terminalId];
   }
 

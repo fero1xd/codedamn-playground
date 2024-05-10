@@ -99,6 +99,7 @@ const main = () => {
     ws.isAlive = true;
 
     resetIdleTimeout();
+    const wsId = v4();
 
     ws.on("message", async (data, isBinary) => {
       if (isBinary) return;
@@ -145,23 +146,21 @@ const main = () => {
           break;
 
         case IncomingMessage.TERMINAL_SESSION_START:
-          const sessionId = message.data.prevSessionId || v4();
-
-          await terminalManager.createPty(sessionId, (data) => {
+          await terminalManager.createPty(wsId, (data) => {
             sendResponse(
               { serverEvent: OutgoingMessageType.TERMINAL_DATA, data },
               ws
             );
           });
 
-          sendResponse({ nonce: message.nonce, data: { sessionId } }, ws);
+          sendResponse({ nonce: message.nonce, data: {} }, ws);
           break;
 
         case IncomingMessage.TERMINAL_USER_CMD:
-          terminalManager.write(message.data.sessionId, message.data.cmd);
+          terminalManager.write(wsId, message.data.cmd);
           break;
         case IncomingMessage.RESIZE_TERMINAL:
-          terminalManager.resize(message.data.sessionId, message.data);
+          terminalManager.resize(wsId, message.data);
           break;
         case IncomingMessage.GET_PROJECT_FILES:
           fsService.getAllProjectFiles().then(async (files) => {
@@ -200,6 +199,7 @@ const main = () => {
 
     ws.on("close", () => {
       console.log("disconnected");
+      terminalManager.clear(wsId);
     });
 
     ws.on("pong", () => {

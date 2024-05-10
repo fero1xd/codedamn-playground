@@ -6,7 +6,7 @@ export function Browser({ containerUrl }: { containerUrl: string }) {
   const [key, refreshIframe] = useIframe();
   const ref = useRef<HTMLIFrameElement | null>(null);
 
-  const conn = useConnection();
+  const { conn } = useConnection();
 
   useEffect(() => {
     if (!conn) return;

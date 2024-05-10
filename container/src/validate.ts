@@ -23,11 +23,11 @@ export const incomingMessage = z.discriminatedUnion("event", [
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.TERMINAL_SESSION_START),
-    data: z.object({ prevSessionId: z.string().optional() }),
+    data: z.object({}),
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.TERMINAL_USER_CMD),
-    data: z.object({ cmd: z.string(), sessionId: z.string() }),
+    data: z.object({ cmd: z.string() }),
   }),
   baseMessage.extend({
     event: z.literal(IncomingMessage.GET_TYPINGS),
@@ -41,7 +41,6 @@ export const incomingMessage = z.discriminatedUnion("event", [
     data: z.object({
       cols: z.number(),
       rows: z.number(),
-      sessionId: z.string(),
     }),
   }),
 ]);

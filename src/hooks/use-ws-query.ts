@@ -17,7 +17,7 @@ export function useWSQuery<K extends keyof Conn["queries"]>(
     enabled?: boolean;
   }
 ) {
-  const connection = useConnection();
+  const { conn: connection } = useConnection();
   const queries = connection!.queries;
 
   type QueryReturnType = Awaited<ReturnType<(typeof queries)[K]>>;

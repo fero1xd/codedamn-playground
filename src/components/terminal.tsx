@@ -20,9 +20,8 @@ export function TerminalX({
   onReady,
 }: TerminalXProps) {
   const termRef = useRef<HTMLDivElement | null>(null);
-  const conn = useConnection();
+  const { conn } = useConnection();
   const hasRequested = useRef(false);
-  const currentSessionId = useRef<string>();
 
   useEffect(() => {
     if (!conn) return;
@@ -37,32 +36,23 @@ export function TerminalX({
   useEffect(() => {
     if (!termRef.current || !conn?.isReady) return;
 
-    conn.queries
-      .TERMINAL_SESSION_START(currentSessionId.current)
-      .then(({ sessionId }) => {
-        if (sessionId !== currentSessionId.current) {
-          console.log("opened terminal with session id " + sessionId);
-          terminal.reset();
-          terminal.clear();
+    conn.queries.TERMINAL_SESSION_START().then(() => {
+      console.log("opened terminal");
+      terminal.reset();
+      terminal.clear();
 
-          terminal.onData((cmd) => {
-            conn.fireEvent("TERMINAL_USER_CMD", {
-              cmd,
-              sessionId,
-            });
-          });
-        } else {
-          console.log("re using prev terminal sessionnnn");
-        }
-
-        currentSessionId.current = sessionId;
-
-        if (termRef.current) {
-          terminal.open(termRef.current);
-          onReady();
-          forceFit();
-        }
+      terminal.onData((cmd) => {
+        conn.fireEvent("TERMINAL_USER_CMD", {
+          cmd,
+        });
       });
+
+      if (termRef.current) {
+        terminal.open(termRef.current);
+        onReady();
+        forceFit();
+      }
+    });
 
     return () => {
       hasRequested.current = true;
@@ -81,12 +71,11 @@ export function TerminalX({
   }, [fitTerm]);
 
   useEffect(() => {
-    if (!dimensions || !conn?.isReady || !currentSessionId.current) return;
+    if (!dimensions || !conn?.isReady) return;
     console.log("sending resize_terminal", dimensions);
     conn.fireEvent("RESIZE_TERMINAL", {
       cols: terminal.cols,
       rows: terminal.rows,
-      sessionId: currentSessionId.current,
     });
   }, [dimensions, conn, terminal]);
 

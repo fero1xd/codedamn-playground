@@ -1,6 +1,12 @@
 # Code Editor
 
+Live, Interactive online coding workspace inspired by [Codedamn playgrounds](https://codedamn.com/playgrounds)
 ![image](https://codedamn-web.s3.ap-south-1.amazonaws.com/full.png)
+
+## TODO
+
+[ ] Figure out way to bundle node_modules type defs
+[ ] Reduce IO operations
 
 ## Installation
 

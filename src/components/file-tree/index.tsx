@@ -20,7 +20,7 @@ const addDepth = (children: Child[], currentDepth: number) => {
 export function FileTree({ onReady }: { onReady: () => void }) {
   const { data: treeRoot, isLoading } = useWSQuery(["GENERATE_TREE"]);
   const queryClient = useQueryClient();
-  const conn = useConnection();
+  const { conn } = useConnection();
 
   useEffect(() => {
     if (treeRoot) onReady();

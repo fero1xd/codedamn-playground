@@ -48,7 +48,7 @@ export function Editor({ onReady, onError }: EditorProps) {
 
   const { data: treeRoot } = useWSQuery(["GENERATE_TREE"]);
 
-  const conn = useConnection();
+  const { conn } = useConnection();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
