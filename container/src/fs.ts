@@ -95,7 +95,7 @@ class FsService {
   async generateFileTree(dirName: string) {
     try {
       // const contents = await fs.readdir(dirName, { withFileTypes: true });
-      const contents = await glob(env.WORK_DIR + "/*", {
+      const contents = await glob(dirName + "/*", {
         dot: true,
         withFileTypes: true,
       });
@@ -181,12 +181,9 @@ class FsService {
   async getAllProjectFiles() {
     try {
       const workDir = await this.getWorkDir();
-      const tsFiles = await glob(
-        workDir + "/**/*(*.ts|*.json|*.js|*.jsx|*.tsx)",
-        {
-          ignore: ["/**/node_modules/**", "/**/package-lock.json"],
-        }
-      );
+      const tsFiles = await glob(workDir + "/**/*.{ts,js,json,jsx,tsx}", {
+        ignore: ["/**/node_modules/**"],
+      });
 
       return tsFiles;
     } catch (e) {

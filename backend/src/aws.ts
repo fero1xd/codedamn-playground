@@ -3,11 +3,11 @@ import {
   ListObjectsV2Command,
   PutObjectCommand,
   S3,
-} from '@aws-sdk/client-s3';
-import fs from 'fs/promises';
-import { env } from './env';
-import path from 'path';
-import { createReadStream } from 'fs';
+} from "@aws-sdk/client-s3";
+import fs from "fs/promises";
+import { env } from "./env";
+import path from "path";
+import { createReadStream } from "fs";
 
 const client = new S3({
   region: env.REGION,
@@ -32,9 +32,9 @@ const templateExists = async (name: string) => {
 };
 
 export const seedTemplates = async () => {
-  console.log('[seeder]: Starting');
+  console.log("[seeder]: Starting");
 
-  const templatesDir = 'templates';
+  const templatesDir = "templates";
   const templates = await fs.readdir(templatesDir);
 
   for (const template of templates) {
@@ -102,7 +102,7 @@ export async function copyS3Folder(
         );
 
         const copyParams = new CopyObjectCommand({
-          Bucket: env.BUCKET ?? '',
+          Bucket: env.BUCKET ?? "",
           CopySource: `${env.BUCKET}/${object.Key}`,
           Key: destinationKey,
         });
@@ -122,6 +122,6 @@ export async function copyS3Folder(
       );
     }
   } catch (error) {
-    console.error('Error copying folder:', error);
+    console.error("Error copying folder:", error);
   }
 }

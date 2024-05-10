@@ -46,15 +46,20 @@ class AwsService {
       const workDir = await fsService.getWorkDir();
       console.log("[save-to-s3] starting", new Date());
 
-      const allItems = await glob(path.join(workDir, "**/*.*"), {
+      let allItems = await glob(path.join(workDir, "**/*"), {
         ignore: ["/**/node_modules/**"],
         dot: true,
+        withFileTypes: true,
       });
+
+      const allFiles = allItems
+        .filter((item) => item.isFile())
+        .map((file) => path.join(file.path, file.name));
 
       const toDelete = [];
 
       for (const prevFile of this._filesInS3) {
-        if (!allItems.includes(path.join(env.WORK_DIR, prevFile))) {
+        if (!allFiles.includes(path.join(env.WORK_DIR, prevFile))) {
           toDelete.push(prevFile);
         }
       }
@@ -72,7 +77,7 @@ class AwsService {
         );
       }
 
-      for (const file of allItems) {
+      for (const file of allFiles) {
         console.log(file);
         const cmd = new PutObjectCommand({
           Bucket: env.BUCKET,
