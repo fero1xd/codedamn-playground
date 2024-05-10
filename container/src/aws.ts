@@ -42,48 +42,53 @@ class AwsService {
   }
 
   async saveToS3() {
-    const workDir = await fsService.getWorkDir();
-    console.log("[save-to-s3] starting", new Date());
+    try {
+      const workDir = await fsService.getWorkDir();
+      console.log("[save-to-s3] starting", new Date());
 
-    const allItems = await glob(path.join(workDir, "**/*.*"), {
-      ignore: ["/**/node_modules/**"],
-      dot: true,
-    });
-
-    const toDelete = [];
-
-    for (const prevFile of this._filesInS3) {
-      if (!allItems.includes(path.join(env.WORK_DIR, prevFile))) {
-        toDelete.push(prevFile);
-      }
-    }
-
-    if (toDelete.length) {
-      await this._s3.send(
-        new DeleteObjectsCommand({
-          Bucket: env.BUCKET,
-          Delete: {
-            Objects:
-              toDelete.map((item) => ({ Key: `${env.PG_ID}/${item}` })) || [],
-            Quiet: false,
-          },
-        })
-      );
-    }
-
-    for (const file of allItems) {
-      const cmd = new PutObjectCommand({
-        Bucket: env.BUCKET,
-        Key: `${env.PG_ID}/${file.replace(env.WORK_DIR + "/", "")}`,
-        Body: createReadStream(file),
+      const allItems = await glob(path.join(workDir, "**/*.*"), {
+        ignore: ["/**/node_modules/**"],
+        dot: true,
       });
 
-      await this._s3.send(cmd);
+      const toDelete = [];
+
+      for (const prevFile of this._filesInS3) {
+        if (!allItems.includes(path.join(env.WORK_DIR, prevFile))) {
+          toDelete.push(prevFile);
+        }
+      }
+
+      if (toDelete.length) {
+        await this._s3.send(
+          new DeleteObjectsCommand({
+            Bucket: env.BUCKET,
+            Delete: {
+              Objects:
+                toDelete.map((item) => ({ Key: `${env.PG_ID}/${item}` })) || [],
+              Quiet: false,
+            },
+          })
+        );
+      }
+
+      for (const file of allItems) {
+        const cmd = new PutObjectCommand({
+          Bucket: env.BUCKET,
+          Key: `${env.PG_ID}/${file.replace(env.WORK_DIR + "/", "")}`,
+          Body: createReadStream(file),
+        });
+
+        await this._s3.send(cmd);
+      }
+
+      await this._fetchInitialFiles();
+
+      console.log("[save-to-s3] finished");
+    } catch (err) {
+      console.log("[save-to-s3] error");
+      console.log(err);
     }
-
-    await this._fetchInitialFiles();
-
-    console.log("[save-to-s3] finished");
   }
 }
 
