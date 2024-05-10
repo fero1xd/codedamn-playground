@@ -164,10 +164,6 @@ class FsService {
   // Sanitize path here dont let users write anywhere in the container
   async saveFile(filePath: string, contents: string) {
     try {
-      if (!(await this.exists(filePath))) {
-        return;
-      }
-
       await writeFile(filePath, contents, { encoding: "utf-8" });
     } catch (e) {
       console.log("erro while saving file");
@@ -178,8 +174,9 @@ class FsService {
   // Using this for adding models
   async getAllProjectFiles() {
     try {
+      const workDir = await this.getWorkDir();
       const tsFiles = await glob(
-        env.WORK_DIR + "/**/*(*.ts|*.json|*.js|*.jsx|*.tsx)",
+        workDir + "/**/*(*.ts|*.json|*.js|*.jsx|*.tsx)",
         {
           ignore: ["/**/node_modules/**", "/**/package-lock.json"],
         }

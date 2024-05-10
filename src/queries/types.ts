@@ -22,13 +22,12 @@ export type FetchEvents =
   | "GET_DEPS";
 
 // From client -> server
-export type WSEvents = "TERMINAL_USER_CMD" | "SAVE_CHANGES";
+export type WSEvents = "TERMINAL_USER_CMD" | "SAVE_CHANGES" | "RESIZE_TERMINAL";
 
 // From client <- server
 export type ServerEvent =
   | "INSTALL_DEPS"
   | "TERMINAL_DATA"
-  | "FILE_SAVED"
   | "ADD_FILE"
   | "REFETCH_DIR"
   | "REFRESH_IFRAME"

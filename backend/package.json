@@ -1,6 +1,7 @@
 {
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "build": "tsup",
     "db:generate": "bun drizzle-kit generate:pg",
     "db:migrate": "tsx ./src/db/migration.ts",
     "db:studio": "bun drizzle-kit studio"
@@ -27,6 +28,7 @@
     "@types/ws": "^8.5.10",
     "drizzle-kit": "^0.20.14",
     "pg": "^8.11.5",
+    "tsup": "^8.0.2",
     "tsx": "^4.7.1"
   }
 }

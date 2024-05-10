@@ -1,4 +1,4 @@
-import { Root, FetchEvents, ServerEvent } from "@/queries/types";
+import { Root, FetchEvents, ServerEvent, WSEvents } from "@/queries/types";
 import {
   PropsWithChildren,
   useCallback,
@@ -29,6 +29,8 @@ export type Conn = {
     event: ServerEvent,
     cb: (data: T) => void
   ): () => void;
+
+  fireEvent: (event: WSEvents, data: unknown) => void;
 };
 
 export const WSContext = createContext<Conn | null>(null);
@@ -185,6 +187,14 @@ export function WebSocketProvider({
     };
   }
 
+  function fireEvent(event: WSEvents, data: unknown) {
+    sendJsonMessage({
+      nonce: "__IGNORED__",
+      event: event,
+      data: data,
+    });
+  }
+
   useEffect(() => {
     const removeSub = addSubscriptionForServerEvent("PLAYGROUND_PAUSED", () => {
       console.log("playground paused");
@@ -220,6 +230,7 @@ export function WebSocketProvider({
               }>;
             },
           },
+          fireEvent,
           // This is provided when no state management for query is required
           fetchCall,
           addSubscription: addSubscriptionForServerEvent,

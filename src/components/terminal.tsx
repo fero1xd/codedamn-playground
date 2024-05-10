@@ -4,19 +4,21 @@ import "@/styles/xterm.css";
 import { Dimensions } from "@/lib/types";
 import { useConnection } from "@/hooks/use-connection";
 
+interface TerminalXProps {
+  terminal: Terminal;
+  dimensions: Dimensions | undefined;
+  fitTerm: () => void;
+  forceFit: () => void;
+  onReady: () => void;
+}
+
 export function TerminalX({
   dimensions,
   terminal,
   fitTerm,
   forceFit,
   onReady,
-}: {
-  terminal: Terminal;
-  dimensions: Dimensions | undefined;
-  fitTerm: () => void;
-  forceFit: () => void;
-  onReady: () => void;
-}) {
+}: TerminalXProps) {
   const termRef = useRef<HTMLDivElement | null>(null);
   const conn = useConnection();
   const hasRequested = useRef(false);
@@ -25,7 +27,7 @@ export function TerminalX({
   useEffect(() => {
     if (!conn) return;
 
-    const rm = conn.addSubscription("TERMINAL_DATA", (data: string) => {
+    const rm = conn.addSubscription<string>("TERMINAL_DATA", (data) => {
       terminal.write(data);
     });
 
@@ -33,9 +35,7 @@ export function TerminalX({
   }, []);
 
   useEffect(() => {
-    if (!conn) return;
-
-    if (!termRef.current || !conn.isReady) return;
+    if (!termRef.current || !conn?.isReady) return;
 
     conn.queries
       .TERMINAL_SESSION_START(currentSessionId.current)
@@ -46,10 +46,9 @@ export function TerminalX({
           terminal.clear();
 
           terminal.onData((cmd) => {
-            conn.sendJsonMessage({
-              nonce: "__ignored___",
-              event: "TERMINAL_USER_CMD",
-              data: { cmd, sessionId },
+            conn.fireEvent("TERMINAL_USER_CMD", {
+              cmd,
+              sessionId,
             });
           });
         } else {
@@ -58,15 +57,10 @@ export function TerminalX({
 
         currentSessionId.current = sessionId;
 
-        forceFit();
-
         if (termRef.current) {
           terminal.open(termRef.current);
           onReady();
-          setTimeout(() => {
-            forceFit();
-            forceFit();
-          }, 500);
+          forceFit();
         }
       });
 
@@ -77,7 +71,6 @@ export function TerminalX({
 
   useEffect(() => {
     const onResizeWindow = () => {
-      console.log("resize");
       fitTerm();
     };
 
@@ -88,23 +81,12 @@ export function TerminalX({
   }, [fitTerm]);
 
   useEffect(() => {
-    if (
-      !dimensions ||
-      !conn ||
-      !conn.isReady ||
-      !terminal ||
-      !currentSessionId.current
-    )
-      return;
-
-    conn.sendJsonMessage({
-      event: "RESIZE_TERMINAL",
-      nonce: "__ignore__",
-      data: {
-        cols: terminal.cols,
-        rows: terminal.rows,
-        sessionId: currentSessionId.current,
-      },
+    if (!dimensions || !conn?.isReady || !currentSessionId.current) return;
+    console.log("sending resize_terminal", dimensions);
+    conn.fireEvent("RESIZE_TERMINAL", {
+      cols: terminal.cols,
+      rows: terminal.rows,
+      sessionId: currentSessionId.current,
     });
   }, [dimensions, conn, terminal]);
 

@@ -32,14 +32,14 @@ export function FileTree({ onReady }: { onReady: () => void }) {
       (data: ChangeEvent) => {
         if (data.event === "change") return;
 
-        const finalPath =
+        const dirToRefetch =
           path.join(data.path, "..") === treeRoot?.path
             ? ""
             : path.join(data.path, "..");
 
-        console.log("change event in file tree", { finalPath });
+        console.log("change event in file tree", { dirToRefetch });
 
-        if (finalPath === "") {
+        if (dirToRefetch === "") {
           queryClient.invalidateQueries({
             predicate(query) {
               return (
@@ -51,7 +51,7 @@ export function FileTree({ onReady }: { onReady: () => void }) {
           });
         } else {
           queryClient.invalidateQueries({
-            queryKey: ["GENERATE_TREE", finalPath],
+            queryKey: ["GENERATE_TREE", dirToRefetch],
             refetchType: "all",
           });
         }

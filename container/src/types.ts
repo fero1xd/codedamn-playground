@@ -29,7 +29,6 @@ export interface Root extends Node {}
 export enum OutgoingMessageType {
   TERMINAL_DATA = "TERMINAL_DATA",
   INSTALL_DEPS = "INSTALL_DEPS",
-  FILE_SAVED = "FILE_SAVED",
   ADD_FILE = "ADD_FILE",
   REFETCH_DIR = "REFETCH_DIR",
   REFRESH_IFRAME = "REFRESH_IFRAME",

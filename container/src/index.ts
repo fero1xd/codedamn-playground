@@ -115,14 +115,9 @@ const main = () => {
 
       switch (message?.event) {
         case IncomingMessage.SAVE_CHANGES:
-          console.log("save changes req");
           await fsService.saveFile(
             message.data.filePath,
             message.data.newContent
-          );
-          sendResponse(
-            { serverEvent: OutgoingMessageType.FILE_SAVED, data: "File saved" },
-            ws
           );
           break;
         case IncomingMessage.GENERATE_TREE:

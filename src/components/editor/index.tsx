@@ -40,7 +40,6 @@ type EditorProps = {
 export function Editor({ onReady, onError }: EditorProps) {
   const { themeLoaded } = useMaterial();
   const editorStates = useRef(new EditorState());
-
   const monacoInstance = useMonaco() as Monaco | null;
   const [openedModels, setOpenedModels] = useState<TextModel[]>([]);
   const editorRef = useRef<EditorType>();
@@ -79,22 +78,19 @@ export function Editor({ onReady, onError }: EditorProps) {
         const allLibs =
           m.languages.typescript.typescriptDefaults.getExtraLibs();
 
-        for (const libPath of Object.keys(allLibs)) {
-          if (libPath === fileUri) {
-            allLibs[libPath] = {
-              version: allLibs[libPath].version,
-              content: contents,
-            };
-            break;
-          }
-        }
+        if (allLibs[fileUri]) {
+          allLibs[fileUri] = {
+            version: allLibs[fileUri].version,
+            content: contents,
+          };
 
-        m.languages.typescript.typescriptDefaults.setExtraLibs(
-          Object.entries(allLibs).map((e) => ({
-            content: e[1].content,
-            filePath: e[0],
-          }))
-        );
+          m.languages.typescript.typescriptDefaults.setExtraLibs(
+            Object.entries(allLibs).map((e) => ({
+              content: e[1].content,
+              filePath: e[0],
+            }))
+          );
+        }
       }
 
       if (existingModel) {
@@ -149,12 +145,6 @@ export function Editor({ onReady, onError }: EditorProps) {
     const listeners: (() => void)[] = [];
 
     listeners.push(
-      conn.addSubscription("FILE_SAVED", (msg: string) => {
-        console.log("server event file saved: " + msg);
-      })
-    );
-
-    listeners.push(
       conn.addSubscription("REFETCH_DIR", async (data: ChangeEvent) => {
         console.log("Refetch dir", data);
         const treeRoot = await queryClient.getQueryData<Root>([
@@ -200,8 +190,8 @@ export function Editor({ onReady, onError }: EditorProps) {
                 (p) => p.uri.toString() !== doesExists.uri.toString()
               )
             );
-
             doesExists.dispose();
+            setSelectedFile(undefined);
           }
         } else if (data.event === "change") {
           if (!editorRef.current || !monacoInstance || !data.shouldFetch)
@@ -407,13 +397,9 @@ export function Editor({ onReady, onError }: EditorProps) {
   const saveChangesRaw = async (filePath: string, contents: string) => {
     if (!conn || !conn.isReady) return;
 
-    conn.sendJsonMessage({
-      nonce: "__ignored__",
-      event: "SAVE_CHANGES",
-      data: {
-        filePath,
-        newContent: contents,
-      },
+    conn.fireEvent("SAVE_CHANGES", {
+      filePath,
+      newContent: contents,
     });
   };
 

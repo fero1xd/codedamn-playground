@@ -48,7 +48,7 @@ export function configureJs(m: Monaco) {
     moduleResolution: m.languages.typescript.ModuleResolutionKind.NodeJs,
 
     target: m.languages.typescript.ScriptTarget.ES2020,
-    jsx: m.languages.typescript.JsxEmit.React,
+    jsx: m.languages.typescript.JsxEmit.Preserve,
     module: m.languages.typescript.ModuleKind.ESNext,
   };
 
