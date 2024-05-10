@@ -1,4 +1,4 @@
-import { Terminal } from "@xterm/xterm";
+import { IDisposable, Terminal } from "@xterm/xterm";
 import { useEffect, useRef } from "react";
 import "@/styles/xterm.css";
 import { Dimensions } from "@/lib/types";
@@ -22,6 +22,7 @@ export function TerminalX({
   const termRef = useRef<HTMLDivElement | null>(null);
   const { conn } = useConnection();
   const hasRequested = useRef(false);
+  const onDataListener = useRef<IDisposable>();
 
   useEffect(() => {
     if (!conn) return;
@@ -41,7 +42,9 @@ export function TerminalX({
       terminal.reset();
       terminal.clear();
 
-      terminal.onData((cmd) => {
+      onDataListener.current?.dispose();
+
+      onDataListener.current = terminal.onData((cmd) => {
         conn.fireEvent("TERMINAL_USER_CMD", {
           cmd,
         });

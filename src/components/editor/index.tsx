@@ -198,9 +198,8 @@ export function Editor({ onReady, onError }: EditorProps) {
             return;
 
           const currentModel = await editorRef.current?.getModel();
-          if (!currentModel) return;
 
-          if (currentModel.uri.toString() === uri.toString()) {
+          if (currentModel?.uri.toString() === uri.toString()) {
             const newContents = await conn.fetchCall("FILE_CONTENT", {
               filePath: data.path,
             });
