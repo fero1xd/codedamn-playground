@@ -20,8 +20,31 @@ export function TerminalX({
   onReady,
 }: TerminalXProps) {
   const termRef = useRef<HTMLDivElement | null>(null);
-  const { conn } = useConnection();
-  const hasRequested = useRef(false);
+
+  const { conn } = useConnection({
+    onOpenOrReconnect() {
+      conn?.queries.TERMINAL_SESSION_START().then(() => {
+        console.log("opened terminal");
+        terminal.reset();
+        terminal.clear();
+
+        onDataListener.current?.dispose();
+
+        onDataListener.current = terminal.onData((cmd) => {
+          conn.fireEvent("TERMINAL_USER_CMD", {
+            cmd,
+          });
+        });
+
+        if (termRef.current) {
+          terminal.open(termRef.current);
+          onReady();
+          forceFit();
+        }
+      });
+    },
+  });
+
   const onDataListener = useRef<IDisposable>();
 
   useEffect(() => {
@@ -33,34 +56,6 @@ export function TerminalX({
 
     return () => rm();
   }, []);
-
-  useEffect(() => {
-    if (!termRef.current || !conn?.isReady) return;
-
-    conn.queries.TERMINAL_SESSION_START().then(() => {
-      console.log("opened terminal");
-      terminal.reset();
-      terminal.clear();
-
-      onDataListener.current?.dispose();
-
-      onDataListener.current = terminal.onData((cmd) => {
-        conn.fireEvent("TERMINAL_USER_CMD", {
-          cmd,
-        });
-      });
-
-      if (termRef.current) {
-        terminal.open(termRef.current);
-        onReady();
-        forceFit();
-      }
-    });
-
-    return () => {
-      hasRequested.current = true;
-    };
-  }, [termRef, terminal, conn]);
 
   useEffect(() => {
     const onResizeWindow = () => {
@@ -75,7 +70,6 @@ export function TerminalX({
 
   useEffect(() => {
     if (!dimensions || !conn?.isReady) return;
-    console.log("sending resize_terminal", dimensions);
     conn.fireEvent("RESIZE_TERMINAL", {
       cols: terminal.cols,
       rows: terminal.rows,

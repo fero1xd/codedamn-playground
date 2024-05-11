@@ -1,18 +1,17 @@
 import { WSContext } from "@/providers/ws";
-import { useContext, useEffect, useRef } from "react";
+import { useContext, useEffect } from "react";
 
 type UseConnectionProps = {
-  onOpen?: () => void;
+  onOpenOrReconnect?: () => void;
 };
 
 export const useConnection = (params?: UseConnectionProps) => {
   const conn = useContext(WSContext);
-  const triggered = useRef(false);
 
   useEffect(() => {
-    if (conn?.isReady && !triggered.current) {
-      triggered.current = true;
-      params?.onOpen?.();
+    if (conn?.isReady) {
+      // triggered.current = true;
+      params?.onOpenOrReconnect?.();
     }
   }, [conn]);
 

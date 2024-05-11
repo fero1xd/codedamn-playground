@@ -12,6 +12,7 @@ import { LoadingPanel } from "@/playground/loading";
 import { WebSocketProvider } from "@/providers/ws";
 import Confetti from "react-confetti";
 import { API_URL } from "@/lib/utils";
+import { useToast } from "@/components/ui/use-toast";
 
 export const Route = createFileRoute("/playground/$pgId")({
   component: Playground,
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/playground/$pgId")({
 function Playground() {
   const { pgId } = Route.useParams();
   const { dimensions, fitTerm, terminal, forceFit } = useTerminal();
+  const { toast } = useToast();
 
   const { isReady, status, setStatus } = usePgLoading();
 
@@ -78,6 +80,12 @@ function Playground() {
       {host && status.containerBooted.success && (
         <WebSocketProvider
           playgroundId={host}
+          onReconnect={() => {
+            console.log("Websocket reconnected");
+            toast({
+              description: "Websocket connection re-established",
+            });
+          }}
           onConnected={() => {
             if (!status.ws.loading) return;
             setStatus("ws", () => ({

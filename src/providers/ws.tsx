@@ -37,6 +37,7 @@ type WebSocketProviderProps = PropsWithChildren & {
   playgroundId: string;
   onConnected: () => void;
   onFailure: () => void;
+  onReconnect: () => void;
 };
 
 export function WebSocketProvider({
@@ -44,6 +45,7 @@ export function WebSocketProvider({
   playgroundId,
   onConnected,
   onFailure,
+  onReconnect,
 }: WebSocketProviderProps) {
   const listeners = useRef<Map<string, (data: unknown) => void>>(new Map());
   const subscriptions = useRef<
@@ -54,6 +56,7 @@ export function WebSocketProvider({
   const [isReady, setIsReady] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const hasInstance = useRef(false);
+  const hasOpenedOnce = useRef(false);
 
   useEffect(() => {
     if (!conn && !hasInstance.current) {
@@ -71,6 +74,11 @@ export function WebSocketProvider({
       ws.onopen = () => {
         console.log("ws connection opened");
 
+        if (ws.retryCount > 0 || hasOpenedOnce.current) {
+          onReconnect();
+        }
+
+        hasOpenedOnce.current = true;
         onConnected();
         setConn(ws);
         setIsReady(true);

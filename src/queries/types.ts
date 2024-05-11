@@ -3,7 +3,7 @@
 export interface Child extends Node {
   name: string;
   isDir: boolean;
-  depth: number;
+  depth?: number;
 }
 
 export interface Node {

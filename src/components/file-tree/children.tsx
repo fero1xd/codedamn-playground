@@ -37,7 +37,6 @@ function Item({ node }: ItemProps) {
         key={node.path}
         onClick={() => {
           if (node.isDir) {
-            console.log("toggling open ", path, open);
             setOpen((o) => !o);
             setSelectedDir(path);
           } else {
@@ -48,7 +47,7 @@ function Item({ node }: ItemProps) {
           `flex items-center transition-all ease-out`,
           `${isSelected ? "bg-gray-900" : "bg-transparent"} hover:cursor-pointer hover:bg-gray-900`
         )}
-        style={{ paddingLeft: `${node.depth * 16}px` }}
+        style={{ paddingLeft: `${(node.depth || 1) * 16}px` }}
       >
         <span className="flex w-[32px] h-[32px] items-center justify-center">
           {getIcon(node.name.split(".").pop() || "", node.name, {
@@ -73,7 +72,7 @@ function Nested({ node: dir }: ItemProps) {
       const cloned = { ...data };
 
       cloned.children.forEach((c) => {
-        c.depth = (dir.depth !== undefined ? dir.depth : 0) + 1;
+        c.depth = (dir.depth !== undefined ? dir.depth : 1) + 1;
       });
 
       return cloned;

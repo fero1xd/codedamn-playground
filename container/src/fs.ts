@@ -38,6 +38,19 @@ class FsService {
     });
   }
 
+  private _getAsciiDiff(a: string, b: string) {
+    for (let i = 0; i < Math.min(a.length, b.length); i++) {
+      const ascii1 = a.charCodeAt(i);
+      const ascii2 = b.charCodeAt(i);
+
+      if (ascii1 !== ascii2) {
+        return ascii1 - ascii2;
+      }
+    }
+
+    return 0;
+  }
+
   async watchWorkDir(
     cb: (
       event: "change" | "add" | "addDir" | "unlink" | "unlinkDir",
@@ -94,15 +107,20 @@ class FsService {
 
   async generateFileTree(dirName: string) {
     try {
-      // const contents = await fs.readdir(dirName, { withFileTypes: true });
       const contents = await glob(dirName + "/*", {
         dot: true,
         withFileTypes: true,
       });
 
-      const sortedContents = contents.sort(
-        (a, b) => (a.isDirectory() ? 0 : 1) - (b.isDirectory() ? 0 : 1)
-      );
+      const sortedContents = contents.sort((a, b) => {
+        if (a.isDirectory() && b.isFile()) {
+          return -1;
+        } else if (a.isFile() && b.isDirectory()) {
+          return 1;
+        }
+
+        return this._getAsciiDiff(a.name.toLowerCase(), b.name.toLowerCase());
+      });
 
       const root: Root = {
         path: dirName,
