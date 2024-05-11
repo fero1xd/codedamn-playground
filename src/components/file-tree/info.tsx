@@ -12,7 +12,7 @@ import { getSubDomain } from "@/lib/utils";
 
 export function InfoAlert({ pgId }: { pgId: string }) {
   return (
-    <AlertDialog>
+    <AlertDialog defaultOpen>
       <AlertDialogTrigger asChild>
         <svg
           xmlns="http://www.w3.org/2000/svg"

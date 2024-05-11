@@ -6,6 +6,7 @@ Live, Interactive online coding workspace inspired by [Codedamn playgrounds](htt
 ## TODO
 
 - Figure out way to bundle node_modules type defs
+- Current Typescript type defs support is crappy
 
 ## Installation
 
