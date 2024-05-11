@@ -87,7 +87,7 @@
   }
 }
 
-a {
+.links {
   @apply underline text-white hover:text-gray-300 cursor-pointer transition-colors;
 }
 

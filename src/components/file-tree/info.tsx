@@ -44,12 +44,20 @@ export function InfoAlert({ pgId }: { pgId: string }) {
                 You can access both these ports on
                 <ol className="space-y-1 mt-2 pl-2">
                   <li>
-                    <a href={getSubDomain(pgId)} target="_blank">
+                    <a
+                      href={getSubDomain(pgId)}
+                      target="_blank"
+                      className="links"
+                    >
                       {getSubDomain(pgId)}
                     </a>
                   </li>
                   <li>
-                    <a href={getSubDomain(`${pgId}-42070`)} target="_blank">
+                    <a
+                      href={getSubDomain(`${pgId}-42070`)}
+                      target="_blank"
+                      className="links"
+                    >
                       {getSubDomain(`${pgId}-42070`)}
                     </a>
                   </li>
