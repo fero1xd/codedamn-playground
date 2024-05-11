@@ -111,7 +111,7 @@ export const checkPlaygroundStatus = async (
 };
 
 function addSubdomain(sub: string, toPort: number, ws = false) {
-  return `${env.SECURE === "true" ? (ws ? "wss" : "https") : ws ? "ws" : "http"}://${sub}.${env.DOMAIN} -> ${toPort}`;
+  return `${ws ? "ws" : "http"}://${sub}.${env.DOMAIN} -> :${toPort}`;
 }
 
 export const createPlaygroundContainer = async (
