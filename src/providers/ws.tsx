@@ -11,6 +11,7 @@ import { createContext } from "react";
 import { v4 } from "uuid";
 import ReconnectingWebSocket from "reconnecting-websocket";
 import { ContainerPaused } from "@/components/container-paused";
+import { getSubDomain } from "@/lib/utils";
 
 export type Conn = {
   isReady: boolean;
@@ -61,7 +62,7 @@ export function WebSocketProvider({
   useEffect(() => {
     if (!conn && !hasInstance.current) {
       const ws = new ReconnectingWebSocket(
-        `wss://${playgroundId}-3001.app.soketto.dev`,
+        getSubDomain(`${playgroundId}-3001`, true),
         [],
         {
           connectionTimeout: 15000,

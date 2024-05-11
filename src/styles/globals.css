@@ -87,6 +87,10 @@
   }
 }
 
+a {
+  @apply underline text-white hover:text-gray-300 cursor-pointer transition-colors;
+}
+
 .JsxText {
   color: #5c6773;
 }

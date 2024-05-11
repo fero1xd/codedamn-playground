@@ -11,7 +11,7 @@ import { usePgLoading } from "@/hooks/use-pg-loading";
 import { LoadingPanel } from "@/playground/loading";
 import { WebSocketProvider } from "@/providers/ws";
 import Confetti from "react-confetti";
-import { API_URL } from "@/lib/utils";
+import { API_URL, getSubDomain } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 
 export const Route = createFileRoute("/playground/$pgId")({
@@ -103,6 +103,7 @@ function Playground() {
           }}
         >
           <Layout
+            pgId={host}
             editor={
               <Editor
                 onReady={() => {
@@ -148,9 +149,7 @@ function Playground() {
                 }}
               />
             }
-            preview={
-              <Browser containerUrl={`https://${host}.app.soketto.dev`} />
-            }
+            preview={<Browser containerUrl={getSubDomain(host)} />}
             onLayout={() => {
               fitTerm();
             }}

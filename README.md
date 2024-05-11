@@ -5,8 +5,7 @@ Live, Interactive online coding workspace inspired by [Codedamn playgrounds](htt
 
 ## TODO
 
-[ ] Figure out way to bundle node_modules type defs
-[ ] Reduce IO operations
+- Figure out way to bundle node_modules type defs
 
 ## Installation
 
@@ -18,6 +17,14 @@ Three main parts to setup
 
 ### Frontend
 
+Create a `.env.local` file in the root directory
+
+```
+VITE_API_URL=
+VITE_IS_SECURE=
+VITE_PG_SUBDOMAIN=
+```
+
 ```bash
 bun install
 bun run build
@@ -25,6 +32,20 @@ bun preview
 ```
 
 ### Backend API
+
+Create a `.env` file with the following contents
+
+```
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
+DATABASE_URL=
+BUCKET=
+REGION=
+ACCESS_KEY=
+SECRET_KEY=
+DOMAIN=
+SECURE=
+```
 
 ```bash
 cd backend

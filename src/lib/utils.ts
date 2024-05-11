@@ -17,5 +17,10 @@ export function getAsciiDiff(a: string, b: string) {
 
   return 0;
 }
+export function getSubDomain(sub: string, ws = false) {
+  return `${IS_SECURE === "true" ? (ws ? "wss" : "https") : ws ? "ws" : "http"}://${sub}.${PG_DOMAIN}`;
+}
 
 export const API_URL = import.meta.env.VITE_API_URL;
+export const PG_DOMAIN = import.meta.env.VITE_PG_SUBDOMAIN;
+export const IS_SECURE = import.meta.env.VITE_IS_SECURE;

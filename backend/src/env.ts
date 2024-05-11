@@ -6,6 +6,8 @@ const REQUIRED_ENV = [
   "DATABASE_URL",
   "UPSTASH_REDIS_REST_URL",
   "UPSTASH_REDIS_REST_TOKEN",
+  "DOMAIN",
+  "SECURE",
 ] as const;
 
 type Env = { [X in (typeof REQUIRED_ENV)[number]]: string };

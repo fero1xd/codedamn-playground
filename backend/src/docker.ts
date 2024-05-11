@@ -69,27 +69,6 @@ export const startPlaygroundBash = async (w: WebSocket) => {
   );
 };
 
-export const attachPlayground = async () => {
-  // const container = await docker.getContainer(
-  //   'de4c0b873a6a68b0c7f40f27b6213a13313a09eb4a560767234ecbf2a41e6dc6'
-  // );
-  // container.attach(
-  //   {
-  //     stdout: true,
-  //     stderr: true,
-  //     stream: true,
-  //   },
-  //   function (err, stream) {
-  //     if (err) throw err;
-  //     if (!stream) {
-  //       return console.log('????');
-  //     }
-  //     console.log('attached');
-  //     container.modem.demuxStream(stream, process.stdout, process.stderr);
-  //   }
-  // );
-};
-
 export type ContainerStatus =
   | "restarting"
   | "exited"
@@ -131,6 +110,10 @@ export const checkPlaygroundStatus = async (
   }
 };
 
+function addSubdomain(sub: string, toPort: number, ws = false) {
+  return `${env.SECURE === "true" ? (ws ? "wss" : "https") : ws ? "ws" : "http"}://${sub}.${env.DOMAIN} -> ${toPort}`;
+}
+
 export const createPlaygroundContainer = async (
   id: string,
   template: TemplateType
@@ -145,11 +128,12 @@ export const createPlaygroundContainer = async (
       UPSTASH_REDIS_REST_TOKEN: env.UPSTASH_REDIS_REST_TOKEN,
       WORK_DIR: "/home/slave/app",
       DEPS_FILE: "package.json",
-      VIRTUAL_HOST1: `ws://${slug}-3001.app.soketto.dev -> :3001`,
+      VIRTUAL_HOST1: addSubdomain(`${slug}-3001`, 3001, true),
+
       // Available for users
-      VIRTUAL_HOST2: `http://${slug}.app.soketto.dev -> :42069`,
-      VIRTUAL_HOST3: `ws://${slug}.app.soketto.dev -> :42069`,
-      VIRTUAL_HOST4: `http://${slug}-42070.app.soketto.dev -> :42070`,
+      VIRTUAL_HOST2: addSubdomain(slug, 42069),
+      VIRTUAL_HOST3: addSubdomain(slug, 42069, true),
+      VIRTUAL_HOST4: addSubdomain(`${slug}-42070`, 42070),
       IDLE_INTERVAL: "5",
 
       PG_ID: id,
@@ -179,6 +163,7 @@ export const createPlaygroundContainer = async (
 
     return { success: true, id: container.id, isFirstBoot: !existingSlug };
   } catch (e) {
+    // @ts-expect-error
     if (e.statusCode === 409) {
       return { success: true };
     }
