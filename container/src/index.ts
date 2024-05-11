@@ -63,21 +63,33 @@ const main = () => {
     });
   });
 
+  let currentBatch: { event: string; path: string; shouldFetch: boolean }[] =
+    [];
+
+  let batchTimeout: NodeJS.Timeout | null = null;
+
   fsService.watchWorkDir((event, path, shouldFetch) => {
-    wss.clients.forEach((ws) => {
-      sendResponse(
-        {
-          serverEvent: OutgoingMessageType.REFETCH_DIR,
-          // data: finalPath === env.WORK_DIR ? "" : finalPath,
-          data: {
-            event,
-            path,
-            shouldFetch,
+    if (batchTimeout) {
+      clearTimeout(batchTimeout);
+    }
+    currentBatch.push({ event, path, shouldFetch });
+
+    batchTimeout = setTimeout(() => {
+      // Send batch messages here
+      console.log("Sending batch changes here");
+      wss.clients.forEach((ws) => {
+        sendResponse(
+          {
+            serverEvent: OutgoingMessageType.REFETCH_DIR,
+            data: currentBatch,
           },
-        },
-        ws
-      );
-    });
+          ws
+        );
+      });
+
+      currentBatch = [];
+      batchTimeout = null;
+    }, 1000);
   });
 
   resetIdleTimeout();

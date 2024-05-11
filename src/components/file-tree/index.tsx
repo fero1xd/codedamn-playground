@@ -6,6 +6,7 @@ import { useWSQuery } from "@/hooks/use-ws-query";
 import { Spinner } from "../ui/loading";
 import { useConnection } from "@/hooks/use-connection";
 import path from "path-browserify";
+import { getAsciiDiff } from "@/lib/utils";
 
 type FileTreeProps = {
   onReady: () => void;
@@ -23,58 +24,55 @@ export function FileTree({ onReady }: FileTreeProps) {
 
     const removeListener = conn.addSubscription(
       "REFETCH_DIR",
-      async (data: ChangeEvent) => {
-        if (data.event === "change") return;
+      async (events: ChangeEvent) => {
+        for (const data of events) {
+          if (data.event === "change") return;
 
-        const dirToRefetch =
-          path.join(data.path, "..") === treeRoot?.path
-            ? ""
-            : path.join(data.path, "..");
+          const dirToRefetch =
+            path.join(data.path, "..") === treeRoot?.path
+              ? ""
+              : path.join(data.path, "..");
 
-        console.log("change event in file tree", { dirToRefetch });
+          console.log("change event in file tree", { dirToRefetch });
 
-        const queryKey =
-          dirToRefetch === ""
-            ? ["GENERATE_TREE"]
-            : ["GENERATE_TREE", dirToRefetch];
-        const queryData = await queryClient.getQueryData<Root>(queryKey);
+          const queryKey =
+            dirToRefetch === ""
+              ? ["GENERATE_TREE"]
+              : ["GENERATE_TREE", dirToRefetch];
+          const queryData = await queryClient.getQueryData<Root>(queryKey);
 
-        if (!queryData) return;
+          if (!queryData) return;
 
-        if (data.event === "add" || data.event === "addDir") {
+          if (data.event === "add" || data.event === "addDir") {
+            await queryClient.setQueryData(queryKey, {
+              ...queryData,
+              children: [
+                ...queryData.children,
+                {
+                  isDir: data.event === "addDir",
+                  children: [],
+                  name: path.basename(data.path),
+                  path: data.path,
+                  depth: 1,
+                },
+              ].sort((a, b) => {
+                if (a.isDir && !b.isDir) {
+                  return -1;
+                } else if (!a.isDir && b.isDir) {
+                  return 1;
+                }
+
+                return getAsciiDiff(a.name.toLowerCase(), b.name.toLowerCase());
+              }),
+            });
+            return;
+          }
+
           await queryClient.setQueryData(queryKey, {
             ...queryData,
-            children: [
-              ...queryData.children,
-              {
-                isDir: data.event === "addDir",
-                children: [],
-                name: path.basename(data.path),
-                path: data.path,
-                depth: 1,
-              },
-            ].sort((a, b) => (a.isDir ? 0 : 1) - (b.isDir ? 0 : 1)),
+            children: queryData.children.filter((ch) => ch.path !== data.path),
           });
-          return;
         }
-
-        await queryClient.setQueryData(queryKey, {
-          ...queryData,
-          children: queryData.children.filter((ch) => ch.path !== data.path),
-        });
-
-        // if (dirToRefetch === "") {
-        //   queryClient.invalidateQueries({
-        //     queryKey: ["GENERATE_TREE"],
-        //     exact: true,
-        //     refetchType: "all",
-        //   });
-        // } else {
-        //   queryClient.invalidateQueries({
-        //     queryKey: ["GENERATE_TREE", dirToRefetch],
-        //     refetchType: "all",
-        //   });
-        // }
       }
     );
 

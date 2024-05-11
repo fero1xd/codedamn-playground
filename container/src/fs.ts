@@ -61,6 +61,7 @@ class FsService {
     const workDir = await this.getWorkDir();
     const watcher = chokidar.watch(workDir, {
       ignoreInitial: true,
+
       ignored: (p) => {
         return (
           minimatch(p, "/**/node_modules/**", { dot: true }) ||

@@ -42,4 +42,4 @@ export type ChangeEvent = {
   event: "add" | "unlink" | "addDir" | "unlinkDir" | "change";
   path: string;
   shouldFetch: boolean;
-};
+}[];

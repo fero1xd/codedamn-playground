@@ -53,9 +53,7 @@ export function Browser({ containerUrl }: { containerUrl: string }) {
 
         <div
           className="border-l w-max p-3 cursor-pointer"
-          onClick={() => {
-            open(containerUrl, "_blank");
-          }}
+          onClick={() => open(containerUrl, "_blank")}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
