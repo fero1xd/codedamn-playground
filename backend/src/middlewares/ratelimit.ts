@@ -14,6 +14,8 @@ export function doRatelimit() {
 
     const { success, reset } = await ratelimit.limit(identifier);
 
+    console.log(reset);
+
     if (!success) {
       return c.json(
         {

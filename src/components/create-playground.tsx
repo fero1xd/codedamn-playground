@@ -69,7 +69,11 @@ export function CreatePlayground() {
         body: JSON.stringify(data),
       });
       if (!res.ok) {
-        throw new Error("Mutation failed");
+        throw new Error(
+          res.status === 429
+            ? "There was an unexpected error"
+            : (await res.json()).message
+        );
       }
 
       const json = await res.json();
@@ -90,7 +94,7 @@ export function CreatePlayground() {
       console.log(e);
       toast({
         title: "Error",
-        description: "There was an unexpected error",
+        description: e.message,
         variant: "destructive",
       });
     },
